@@ -1,0 +1,32 @@
+{
+  "name": "pi-modelverse",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Modelverse (api.modelverse.cn) provider for pi — three-protocol routing (anthropic / responses / chat), key-grant-aware live discovery, CNY catalog with tiered pricing.",
+  "type": "module",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "modelverse",
+    "openai-compat",
+    "anthropic-compat"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

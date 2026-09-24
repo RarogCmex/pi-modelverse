@@ -1,0 +1,567 @@
+{
+ "object": "list",
+ "data": [
+  {
+   "created": 1790043214,
+   "id": "mimo-v2.6-flash",
+   "object": "model",
+   "owned_by": "UCloud_UModelverse",
+   "pricing": [
+    {
+     "Condition": "默认",
+     "Description": "默认",
+     "DescriptionEn": "Default",
+     "Rates": [
+      {
+       "ChargeItem": "input",
+       "ChargeItemDescription": "输入",
+       "ChargeItemDescriptionEn": "Input",
+       "Price": 1,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 104012,
+       "PricingSku": "mimo-v2.6-flash_text&image&audio&video_input_standard"
+      },
+      {
+       "ChargeItem": "cache",
+       "ChargeItemDescription": "缓存",
+       "ChargeItemDescriptionEn": "Cache",
+       "Price": 0.02,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 104013,
+       "PricingSku": "mimo-v2.6-flash_text&image&audio&video_cache read_standard"
+      },
+      {
+       "ChargeItem": "output_text_tokens",
+       "ChargeItemDescription": "文本输出",
+       "ChargeItemDescriptionEn": "Text Output",
+       "Price": 2,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 104014,
+       "PricingSku": "mimo-v2.6-flash_text_output_standard"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "created": 1790043195,
+   "id": "mimo-v2.6-pro",
+   "object": "model",
+   "owned_by": "UCloud_UModelverse",
+   "pricing": [
+    {
+     "Condition": "默认",
+     "Description": "默认",
+     "DescriptionEn": "Default",
+     "Rates": [
+      {
+       "ChargeItem": "input",
+       "ChargeItemDescription": "输入",
+       "ChargeItemDescriptionEn": "Input",
+       "Price": 3,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 104009,
+       "PricingSku": "mimo-v2.6-pro_text&image&audio&video_input_standard"
+      },
+      {
+       "ChargeItem": "cache",
+       "ChargeItemDescription": "缓存",
+       "ChargeItemDescriptionEn": "Cache",
+       "Price": 0.025,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 104010,
+       "PricingSku": "mimo-v2.6-pro_text&image&audio&video_cache read_standard"
+      },
+      {
+       "ChargeItem": "output_text_tokens",
+       "ChargeItemDescription": "文本输出",
+       "ChargeItemDescriptionEn": "Text Output",
+       "Price": 6,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 104011,
+       "PricingSku": "mimo-v2.6-pro_text_output_standard"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "created": 1789896315,
+   "id": "jev-1.13.0",
+   "object": "model",
+   "owned_by": "UCloud_UModelverse",
+   "pricing": [
+    {
+     "Condition": "默认",
+     "Description": "默认",
+     "DescriptionEn": "Default",
+     "Rates": [
+      {
+       "ChargeItem": "input",
+       "ChargeItemDescription": "输入",
+       "ChargeItemDescriptionEn": "Input",
+       "Price": 0.3024,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103995,
+       "PricingSku": "jev-1.13.0_text_input_standard"
+      },
+      {
+       "ChargeItem": "output_text_tokens",
+       "ChargeItemDescription": "文本输出",
+       "ChargeItemDescriptionEn": "Text Output",
+       "Price": 0,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103996,
+       "PricingSku": "jev-1.13.0_text_output_standard"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "created": 1788401582,
+   "id": "gemini-3.8-flash",
+   "object": "model",
+   "owned_by": "UCloud_UModelverse",
+   "pricing": [
+    {
+     "Condition": "默认",
+     "Description": "默认",
+     "DescriptionEn": "Default",
+     "Rates": [
+      {
+       "ChargeItem": "input",
+       "ChargeItemDescription": "输入",
+       "ChargeItemDescriptionEn": "Input",
+       "Price": 5.4,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103899,
+       "PricingSku": "gemini-3.8-flash_text&image&audio&video_input_standard"
+      },
+      {
+       "ChargeItem": "cache",
+       "ChargeItemDescription": "缓存",
+       "ChargeItemDescriptionEn": "Cache",
+       "Price": 0.54,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103901,
+       "PricingSku": "gemini-3.8-flash_text&image&audio&video_cache read_standard"
+      },
+      {
+       "ChargeItem": "output_text_tokens",
+       "ChargeItemDescription": "文本输出",
+       "ChargeItemDescriptionEn": "Text Output",
+       "Price": 27,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103900,
+       "PricingSku": "gemini-3.8-flash_text_output_standard"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "created": 1786679829,
+   "id": "gemini-3.7-flash",
+   "object": "model",
+   "owned_by": "UCloud_UModelverse",
+   "pricing": [
+    {
+     "Condition": "默认",
+     "Description": "默认",
+     "DescriptionEn": "Default",
+     "Rates": [
+      {
+       "ChargeItem": "input",
+       "ChargeItemDescription": "输入",
+       "ChargeItemDescriptionEn": "Input",
+       "Price": 5.4,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103751,
+       "PricingSku": "gemini-3.7-flash_text&image&audio&video_input_standard"
+      },
+      {
+       "ChargeItem": "cache",
+       "ChargeItemDescription": "缓存",
+       "ChargeItemDescriptionEn": "Cache",
+       "Price": 0.54,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103753,
+       "PricingSku": "gemini-3.7-flash_text&image&audio&video_cache read_standard"
+      },
+      {
+       "ChargeItem": "output_text_tokens",
+       "ChargeItemDescription": "文本输出",
+       "ChargeItemDescriptionEn": "Text Output",
+       "Price": 27,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103752,
+       "PricingSku": "gemini-3.7-flash_text_output_standard"
+      },
+      {
+       "ChargeItem": "cache_storage_1h_tokens",
+       "ChargeItemDescription": "缓存存储 (1h)",
+       "ChargeItemDescriptionEn": "Cache Storage 1h",
+       "Price": 3.6,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103766,
+       "PricingSku": "gemini-3.7-flash_text&image&video&audio_context cache storage_standard\t"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "created": 1783649298,
+   "id": "gpt-5.6-luna",
+   "object": "model",
+   "owned_by": "UCloud_UModelverse",
+   "pricing": [
+    {
+     "Condition": "输入长度(0, 272K]",
+     "Description": "输入长度(0, 272K]",
+     "DescriptionEn": "Input length(0, 272K]",
+     "Rates": [
+      {
+       "ChargeItem": "input",
+       "ChargeItemDescription": "输入",
+       "ChargeItemDescriptionEn": "Input",
+       "Price": 1.44,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103540,
+       "PricingSku": "gpt-5.6-luna_text&image_input_standard_context≤272K"
+      },
+      {
+       "ChargeItem": "output_text_tokens",
+       "ChargeItemDescription": "文本输出",
+       "ChargeItemDescriptionEn": "Text Output",
+       "Price": 8.64,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103543,
+       "PricingSku": "gpt-5.6-luna_text_output_standard_context≤272K"
+      },
+      {
+       "ChargeItem": "cache_read_tokens",
+       "ChargeItemDescription": "缓存读取",
+       "ChargeItemDescriptionEn": "Cache Read",
+       "Price": 0.144,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103541,
+       "PricingSku": "gpt-5.6-luna_text&image_cache read_standard_context≤272K"
+      },
+      {
+       "ChargeItem": "cache_write_tokens",
+       "ChargeItemDescription": "缓存写入",
+       "ChargeItemDescriptionEn": "Cache Write",
+       "Price": 1.8,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103542,
+       "PricingSku": "gpt-5.6-luna_text&image_cache write_standard_context≤272K"
+      }
+     ]
+    },
+    {
+     "Condition": "输入长度(272K, UNLIMIT]",
+     "Description": "输入长度(272K, UNLIMIT]",
+     "DescriptionEn": "Input length(272K, UNLIMIT]",
+     "Rates": [
+      {
+       "ChargeItem": "input",
+       "ChargeItemDescription": "输入",
+       "ChargeItemDescriptionEn": "Input",
+       "Price": 2.88,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103544,
+       "PricingSku": "gpt-5.6-luna_text&image_input_standard_context>272K"
+      },
+      {
+       "ChargeItem": "output_text_tokens",
+       "ChargeItemDescription": "文本输出",
+       "ChargeItemDescriptionEn": "Text Output",
+       "Price": 12.96,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103547,
+       "PricingSku": "gpt-5.6-luna_text_output_standard_context>272K"
+      },
+      {
+       "ChargeItem": "cache_read_tokens",
+       "ChargeItemDescription": "缓存读取",
+       "ChargeItemDescriptionEn": "Cache Read",
+       "Price": 0.288,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103545,
+       "PricingSku": "gpt-5.6-luna_text&image_cache read_standard_context>272K"
+      },
+      {
+       "ChargeItem": "cache_write_tokens",
+       "ChargeItemDescription": "缓存写入",
+       "ChargeItemDescriptionEn": "Cache Write",
+       "Price": 3.6,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103546,
+       "PricingSku": "gpt-5.6-luna_text&image_cache write_standard_context>272K"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "created": 1783649284,
+   "id": "gpt-5.6-terra",
+   "object": "model",
+   "owned_by": "UCloud_UModelverse",
+   "pricing": [
+    {
+     "Condition": "输入长度(0, 272K]",
+     "Description": "输入长度(0, 272K]",
+     "DescriptionEn": "Input length(0, 272K]",
+     "Rates": [
+      {
+       "ChargeItem": "input",
+       "ChargeItemDescription": "输入",
+       "ChargeItemDescriptionEn": "Input",
+       "Price": 14.4,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103524,
+       "PricingSku": "gpt-5.6-terra_text&image_input_standard_context≤272K"
+      },
+      {
+       "ChargeItem": "output_text_tokens",
+       "ChargeItemDescription": "文本输出",
+       "ChargeItemDescriptionEn": "Text Output",
+       "Price": 86.4,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103527,
+       "PricingSku": "gpt-5.6-terra_text_output_standard_context≤272K"
+      },
+      {
+       "ChargeItem": "cache_read_tokens",
+       "ChargeItemDescription": "缓存读取",
+       "ChargeItemDescriptionEn": "Cache Read",
+       "Price": 1.44,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103525,
+       "PricingSku": "gpt-5.6-terra_text&image_cache read_standard_context≤272K"
+      },
+      {
+       "ChargeItem": "cache_write_tokens",
+       "ChargeItemDescription": "缓存写入",
+       "ChargeItemDescriptionEn": "Cache Write",
+       "Price": 18,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103526,
+       "PricingSku": "gpt-5.6-terra_text&image_cache write_standard_context≤272K"
+      }
+     ]
+    },
+    {
+     "Condition": "输入长度(0, 272K] 且 service_tier=Priority",
+     "Description": "输入长度(0, 272K] 且 service_tier=Priority",
+     "DescriptionEn": "Input length(0, 272K] and service_tier=Priority",
+     "Rates": [
+      {
+       "ChargeItem": "input",
+       "ChargeItemDescription": "输入",
+       "ChargeItemDescriptionEn": "Input",
+       "Price": 28.8,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103730,
+       "PricingSku": "gpt-5.6-terra_text&image_input_priority_context≤272K"
+      },
+      {
+       "ChargeItem": "output_text_tokens",
+       "ChargeItemDescription": "文本输出",
+       "ChargeItemDescriptionEn": "Text Output",
+       "Price": 172.8,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103733,
+       "PricingSku": "gpt-5.6-terra_text_output_priority_context≤272K"
+      },
+      {
+       "ChargeItem": "cache_read_tokens",
+       "ChargeItemDescription": "缓存读取",
+       "ChargeItemDescriptionEn": "Cache Read",
+       "Price": 2.88,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103731,
+       "PricingSku": "gpt-5.6-terra_text&image_cache read_priority_context≤272K"
+      },
+      {
+       "ChargeItem": "cache_write_tokens",
+       "ChargeItemDescription": "缓存写入",
+       "ChargeItemDescriptionEn": "Cache Write",
+       "Price": 36,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103732,
+       "PricingSku": "gpt-5.6-terra_text&image_cache write_priority_context≤272K"
+      }
+     ]
+    },
+    {
+     "Condition": "输入长度(272K, UNLIMIT]",
+     "Description": "输入长度(272K, UNLIMIT]",
+     "DescriptionEn": "Input length(272K, UNLIMIT]",
+     "Rates": [
+      {
+       "ChargeItem": "input",
+       "ChargeItemDescription": "输入",
+       "ChargeItemDescriptionEn": "Input",
+       "Price": 28.8,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103528,
+       "PricingSku": "gpt-5.6-terra_text&image_input_standard_context>272K"
+      },
+      {
+       "ChargeItem": "output_text_tokens",
+       "ChargeItemDescription": "文本输出",
+       "ChargeItemDescriptionEn": "Text Output",
+       "Price": 129.6,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103531,
+       "PricingSku": "gpt-5.6-terra_text_output_standard_context>272K"
+      },
+      {
+       "ChargeItem": "cache_read_tokens",
+       "ChargeItemDescription": "缓存读取",
+       "ChargeItemDescriptionEn": "Cache Read",
+       "Price": 2.88,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103529,
+       "PricingSku": "gpt-5.6-terra_text&image_cache read_standard_context>272K"
+      },
+      {
+       "ChargeItem": "cache_write_tokens",
+       "ChargeItemDescription": "缓存写入",
+       "ChargeItemDescriptionEn": "Cache Write",
+       "Price": 36,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103530,
+       "PricingSku": "gpt-5.6-terra_text&image_cache write_standard_context>272K"
+      }
+     ]
+    },
+    {
+     "Condition": "输入长度(272K, UNLIMIT] 且 service_tier=Priority",
+     "Description": "输入长度(272K, UNLIMIT] 且 service_tier=Priority",
+     "DescriptionEn": "Input length(272K, UNLIMIT] and service_tier=Priority",
+     "Rates": [
+      {
+       "ChargeItem": "input",
+       "ChargeItemDescription": "输入",
+       "ChargeItemDescriptionEn": "Input",
+       "Price": 28.8,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103789,
+       "PricingSku": "gpt-5.6-terra_text&image_input_priority_context>272K"
+      },
+      {
+       "ChargeItem": "output_text_tokens",
+       "ChargeItemDescription": "文本输出",
+       "ChargeItemDescriptionEn": "Text Output",
+       "Price": 129.6,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103792,
+       "PricingSku": "gpt-5.6-terra_text_output_priority_context>272K"
+      },
+      {
+       "ChargeItem": "cache_read_tokens",
+       "ChargeItemDescription": "缓存读取",
+       "ChargeItemDescriptionEn": "Cache Read",
+       "Price": 2.88,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103790,
+       "PricingSku": "gpt-5.6-terra_text&image_cache read_priority_context>272K"
+      },
+      {
+       "ChargeItem": "cache_write_tokens",
+       "ChargeItemDescription": "缓存写入",
+       "ChargeItemDescriptionEn": "Cache Write",
+       "Price": 36,
+       "Currency": "CNY",
+       "Unit": "百万 Token",
+       "UnitEn": "Million Tokens",
+       "PricingSkuId": 103791,
+       "PricingSku": "gpt-5.6-terra_text&image_cache write_priority_context>272K"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
