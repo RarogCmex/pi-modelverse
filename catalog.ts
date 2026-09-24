@@ -178,8 +178,11 @@ export const CATALOG: readonly CatalogEntry[] = [
     id: "mimo-v2.6-flash",
     name: "MiMo v2.6 Flash",
     api: "openai-responses",
-    contextWindow: CTX_262K, // est
-    maxTokens: OUT_32K, // est
+    contextWindow: CTX_262K, // est; ≥340K input accepted live (probe 2026-09-24)
+    // Probed live 2026-09-24 by bisection: 131072 accepted, 131073 → "Param
+    // Incorrect". The gateway does not publish output caps, so this is the
+    // only source.
+    maxTokens: 131_072,
     input: ["text", "image"], // listing SKU: text&image&audio&video input
     thinking: { kind: "effort", levels: MODELVERSE_EFFORT },
     cny: { input: 1, output: 2, cacheRead: 0.02 },
@@ -189,7 +192,7 @@ export const CATALOG: readonly CatalogEntry[] = [
     name: "MiMo v2.6 Pro",
     api: "openai-responses",
     contextWindow: CTX_262K, // est
-    maxTokens: OUT_32K, // est
+    maxTokens: 131_072, // probed via the flash sibling (same family cap)
     input: ["text", "image"],
     thinking: { kind: "effort", levels: MODELVERSE_EFFORT },
     cny: { input: 3, output: 6, cacheRead: 0.025 },
@@ -235,7 +238,7 @@ export const CATALOG: readonly CatalogEntry[] = [
     name: "Gemini 3.8 Flash",
     api: "openai-completions",
     contextWindow: CTX_1M, // est: Gemini norm
-    maxTokens: OUT_64K, // est
+    maxTokens: 65_536, // probed live: 65536 OK, 65537 rejected (Gemini maxOutputTokens)
     input: ["text", "image"],
     thinking: { kind: "none" }, // no reasoning_content observed on chat
     cny: { input: 5.4, output: 27, cacheRead: 0.54 },
@@ -245,7 +248,7 @@ export const CATALOG: readonly CatalogEntry[] = [
     name: "Gemini 3.7 Flash",
     api: "openai-completions",
     contextWindow: CTX_1M, // est
-    maxTokens: OUT_64K, // est
+    maxTokens: 65_536, // probed live: 65536 OK, 65537 rejected — family cap
     input: ["text", "image"],
     thinking: { kind: "none" },
     cny: { input: 5.4, output: 27, cacheRead: 0.54 },

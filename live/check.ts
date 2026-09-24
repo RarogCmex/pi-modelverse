@@ -61,11 +61,26 @@ async function main() {
     console.log(`${name}: http=${probe.status} granted=${probe.granted} sample=${probe.sample.join(", ")}`);
   }
 
-  const key1 = env.KEY1;
-  if (key1) {
-    console.log("\ncatalog smoke (chat surface, KEY1):");
+  // Cheap live smoke on the chat surface. Quota-aware: a key whose spend budget
+  // is exhausted answers permission_error for everything (even rejected
+  // requests — the cap is estimated at admission), so report and move on
+  // instead of hammering the gateway. Needs the model to be granted to the key.
+  for (const name of ["KEY1", "KEY2"]) {
+    const key = env[name];
+    if (!key) continue;
+    console.log(`\nchat smoke (${name}):`);
     for (const entry of CATALOG.filter((entry) => entry.api === "openai-completions")) {
-      console.log(`  ${entry.id.padEnd(18)} ${await chatRoundtrip(api, key1, entry.id)}`);
+      const grants = await probeGrants(key, api);
+      if (!grants.ok) {
+        console.log(`  stop: key rejected (HTTP ${grants.status})`);
+        break;
+      }
+      const result = await chatRoundtrip(api, key, entry.id);
+      console.log(`  ${entry.id.padEnd(18)} ${result}`);
+      if (/quota exceeded/i.test(result)) {
+        console.log(`  ${name}: месячная/дневная квота исчерпана — остальные модели пропущены.`);
+        break;
+      }
     }
   }
 }
