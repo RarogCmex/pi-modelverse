@@ -26,7 +26,7 @@
 // module boundary in the package (same contract as pi-siliconflow).
 import { anthropicMessagesApi, openAICompletionsApi, openAIResponsesApi } from "@earendil-works/pi-ai";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { clarifyGrantError, normalizeOverflowError } from "./errors.ts";
+import { clarifyGrantError, clarifyPermissionError, normalizeOverflowError } from "./errors.ts";
 import { PROVIDER_ID } from "./models.ts";
 import { buildModelverseProvider, withSessionAffinity, type ModelverseApis } from "./provider.ts";
 
@@ -35,7 +35,9 @@ export default function (pi: ExtensionAPI) {
   //   1. overflow phrasing → `context_length_exceeded:` so auto-compaction runs
   //      (Modelverse's openai surfaces answer `tokens_too_long` / "Prompt tokens
   //      too long" — see errors.ts; the anthropic route already matches natively)
-  //   2. the opaque grant rejection → actionable text naming the fix
+  //   2. key-level permission failures (quota exceeded / IP whitelist) — the
+  //      official "API Key 精细化权限控制" doc shapes
+  //   3. the opaque grant rejection → actionable text naming the fix
   pi.on("message_end", (event) => {
     const message = event.message;
     if (message.role !== "assistant") return;
@@ -44,6 +46,9 @@ export default function (pi: ExtensionAPI) {
 
     const overflow = normalizeOverflowError(message.errorMessage ?? "");
     if (overflow) return { message: { ...message, errorMessage: overflow } };
+
+    const permission = clarifyPermissionError(message.errorMessage ?? "");
+    if (permission) return { message: { ...message, errorMessage: permission } };
 
     const clarified = clarifyGrantError(message.errorMessage ?? "");
     if (!clarified) return;
@@ -60,7 +65,7 @@ export default function (pi: ExtensionAPI) {
       errorMessage?: string;
     };
     if (msg?.stopReason !== "error" || msg?.provider !== PROVIDER_ID) return;
-    const clarified = clarifyGrantError(msg.errorMessage ?? "");
+    const clarified = clarifyGrantError(msg.errorMessage ?? "") ?? clarifyPermissionError(msg.errorMessage ?? "");
     if (!clarified) return;
     if (event.entries.some((e) => (e as { customType?: string }).customType === "modelverse-grant-help"))
       return;

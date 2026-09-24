@@ -60,3 +60,47 @@ export function clarifyGrantError(message: string): string | undefined {
     `либо возьмите ключ с более широкими грантами.`
   );
 }
+
+/**
+ * Key-level permission failures beyond the model-grant case (official
+ * "API Key 精细化权限控制" doc, api_doc/common/api-key.md, 2026-03-20):
+ *
+ *   Access forbidden: api key quota exceeded, key_id=…, daily_limit_amount=100,
+ *     monthly_limit_amount=1000
+ *   Access forbidden: api key ip not in whitelist, key_id=…, ip=127.0.0.1
+ *
+ * Both are `permission_error`/`forbidden` and read like an auth bug; name the
+ * actual cause instead. Also cover the older `auth_error` shape
+ * ("Validate Certification failed").
+ */
+const KEY_QUOTA_RE = /api key quota exceeded[^\n]*?key_id=([\w-]+)[^\n]*?daily_limit_amount=([\d.]+)[^\n]*?monthly_limit_amount=([\d.]+)/;
+const KEY_IP_RE = /api key ip not in whitelist[^\n]*?key_id=([\w-]+)[^\n]*?ip=([\w:.]+)/;;
+const AUTH_FAILED_RE = /Validate (?:Certification|Authentication) failed|invalid_token/i;
+
+/** Actionable text for key-level permission/auth failures, or undefined. */
+export function clarifyPermissionError(message: string): string | undefined {
+  const quota = KEY_QUOTA_RE.exec(message);
+  if (quota) {
+    const [, keyId, daily, monthly] = quota;
+    return (
+      `modelverse: ключ [${keyId}] исчерпал лимит расходов (дневной ${daily}, месячный ${monthly}). ` +
+      `Лимит задаётся в консоли Modelverse при создании/правке API Key (额控制, Api Key 精细化权限控制). ` +
+      `Увеличьте лимит или смените ключ; учтите, что расходы пересчитываются раз в час.`
+    );
+  }
+  const ip = KEY_IP_RE.exec(message);
+  if (ip) {
+    const [, keyId, sourceIp] = ip;
+    return (
+      `modelverse: ключ [${keyId}] разрешён только с IP из белого списка, а запрос пришёл с ${sourceIp}. ` +
+      `Добавьте IP в whitelist ключа в консоли Modelverse или используйте ключ без IP-ограничения.`
+    );
+  }
+  if (AUTH_FAILED_RE.test(message)) {
+    return (
+      `modelverse: ключ невалиден/отозван (шлюз ответил: ${message.trim()}). ` +
+      `Проверьте ключ в консоли Modelverse и повторно выполните /login modelverse или обновите MODELVERSE_API_KEY.`
+    );
+  }
+  return undefined;
+}

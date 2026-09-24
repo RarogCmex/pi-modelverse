@@ -3,7 +3,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { clarifyGrantError, normalizeOverflowError } from "../errors.ts";
+import { clarifyGrantError, clarifyPermissionError, normalizeOverflowError } from "../errors.ts";
 
 test("normalizeOverflowError: Modelverse official phrasings all map to the marker", () => {
   // Official error-code table (tokens_too_long) + live shapes.
@@ -41,4 +41,24 @@ test("clarifyGrantError: the live gate form becomes actionable", () => {
   assert.ok(clarified.includes("claude-opus-5-5"));
   assert.ok(clarified.includes("зависят от ключа"));
   assert.equal(clarifyGrantError("400 Invalid param"), undefined);
+});
+
+test("clarifyPermissionError: quota, IP whitelist and auth failures name their cause", () => {
+  const quota = clarifyPermissionError(
+    'Access forbidden: api key quota exceeded, key_id=uminferapikey-1j3gwjgyhkwc, daily_limit_amount=100 , monthly_limit_amount=1000',
+  );
+  assert.ok(quota?.includes("uminferapikey-1j3gwjgyhkwc"));
+  assert.ok(quota?.includes("100"));
+  assert.ok(quota?.includes("лимит расходов"));
+
+  const ip = clarifyPermissionError(
+    'Access forbidden: api key ip not in whitelist, key_id=uminferapikey-1j3gwjgyhkwc, ip=127.0.0.1',
+  );
+  assert.ok(ip?.includes("127.0.0.1"));
+  assert.ok(ip?.includes("белого списка"));
+
+  const auth = clarifyPermissionError("401 Validate Certification failed");
+  assert.ok(auth?.includes("невалиден"));
+
+  assert.equal(clarifyPermissionError("500 Internal Server Error"), undefined);
 });

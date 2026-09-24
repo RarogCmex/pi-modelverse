@@ -47,10 +47,14 @@
 
 ## Официальная документация
 
-- GitHub (исходник доков): https://github.com/UCloudDoc-Team/modelverse — в т.ч.
-  `api_doc/text_api/model-competi.md` (матрица протоколов по всем моделям),
-  `api_doc/common/error-code.md` (код‑таблица), `api_doc/text_api/response_api.md`,
-  `api_doc/text_api/claude_compatible.md`, `api_doc/text_api/thinking/*`.
+- GitHub (исходник доков): https://github.com/UCloudDoc-Team/modelverse (~99 markdown
+  файлов, включая `price.md` с полным прайсом, `best_practice/claudecode.md`,
+  `best_practice/codex.md`, `api_doc/text_api/model-competi.md` — матрица
+  протоколов по всем моделям, `api_doc/common/api-key.md` — контроль ключей,
+  `api_doc/common/error-code.md` — код‑таблица, `api_doc/text_api/response_api.md`,
+  `api_doc/text_api/claude_compatible.md`, `api_doc/text_api/gemini_compatible.md`,
+  `api_doc/text_api/thinking/*`).
+  Локальная копия для работы: `git clone --depth 1` (не входит в репо плагина).
 - AstraFlow mirror: https://astraflow.ucloud.cn/docs/modelverse/ (там же
   «提高 Prompt Cache 命中率» / improve-prompt-cache).
 - Английское зеркало: www.ucloud-global.com/en/docs/modelverse/API.
@@ -75,19 +79,55 @@
 
 - `max_completion_tokens` — единственное поддерживаемое имя токен‑лимита на
   openai-поверхностях для gpt-семейства: зашито в `compat.maxTokensField`.
-- `thinking: {type: enabled|disabled|auto}` (DeepSeek-V3.1) и
-  `chat_template_kwargs: {thinking: bool}` (V3.2) — есть в доках, но в курируемый
-  каталог v0.1 не попали модели с этими требованиями; для новых id из оверлея
-  эти форматы НЕ применяются (безопаснее: без параметров, чем с неверной формой).
+- `thinking: {type: enabled|disabled|auto}` (DeepSeek-V3.1, **и Doubao** — по
+  `thinking/doubao.md`) и `chat_template_kwargs: {thinking: bool}` (V3.2) — есть
+  в доках, но в курируемый каталог v0.1 не попали модели с этими требованиями;
+  для новых id из оверлея эти форматы НЕ применяются (безопаснее: без
+  параметров, чем с неверной формой).
 - `/v1/messages` поддерживает только Claude-семейство (claude_compatible.md) —
   `guessApi` это отражает.
 - gpt-oss-*, grok-семейство, Qwen/QwQ-поколение — chat-only (матрица протоколов
   model-competi.md) — маршрутизация по умолчанию уже completions.
 - Код‑таблица ошибок: `tokens_too_long` / `model_error` / `sensitive_check_error` —
   `errors.ts` покрывает первые два; overflow-фраза «Prompt tokens too long» не
-  матчится ни одним пиратском pi-ai, поэтому `message_end` rewrite добавляет
+  матчится ни одним паттерном pi-ai, поэтому `message_end` rewrite добавляет
   маркер `context_length_exceeded:` (auto-compaction срабатывает). Anthropic-фраза
   `prompt is too long: X > Y maximum` распознаётся pi-ai нативно.
+
+### Контроль ключей (`api_doc/common/api-key.md`, 2026-03-20)
+
+Официальное подтверждение всей истории с KEY1/KEY2 и два новых класса ошибок:
+
+- **模型控制**: список разрешённых моделей задаётся на ключе в консоли, и новые
+  модели **НЕ добавляются автоматически** («如需添加新模型，需要手动添加»). Это
+  ровно то, что показал живьём KEY2 (7 id) — и это же значит, что оверлей
+  `fetchModels` должен следовать за ключом (он и следует).
+- **额度控制**: ключ может иметь дневной/месячный лимит расходов →
+  `permission_error` «api key quota exceeded, key_id=…, daily_limit_amount=…»;
+  расходы пересчитываются раз в час (т.е. лимит срабатывает с задержкой).
+- **IP白名单**: ключ может быть ограничен IPv4-списком → «api key ip not in
+  whitelist, key_id=…, ip=…».
+
+Все три формы (плюс старый `auth_error` «Validate Certification failed») теперь
+превращаются `clarifyPermissionError` в понятный текст с указанием причины и фикса.
+
+### Если что-то ломается на anthropic-роуте
+
+Официальный гайд Claude Code (`best_practice/claudecode.md`) советует
+`CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1`: часть экспериментальных beta-фич
+Anthropic API на шлюзе не поддерживается. pi шлёт `anthropic-beta` заголовки
+только для явно включённых compat-фич — у нас они выключены по умолчанию
+(`supportsMidConvoEffort`/`supportsEagerToolInputStreaming` не заданы), так что
+те же грабли не задеты; в крайнем случае беta можно погасить вручную через
+`model.headers` (pi принимает `anthropic-beta: null`).
+
+### Адреса вне Китая
+
+Кроме `https://api.modelverse.cn` есть зеркала (credential/certificate.md):
+`https://api.umodelverse.ai/v1`, а также региональные узлы из quick-start:
+`api-sg.umodelverse.ai` (Сингапур), `api-us-ca.umodelverse.ai` (Лос-Анджелес),
+`api-ge-fra.umodelverse.ai` (Франкфурт). Любой из них подставляется через
+`MODELVERSE_BASE_URL` (anthropic-роут сам срезает `/v1`).
 
 ### Живые перепроверки после подключения доков (2026-09-24)
 
