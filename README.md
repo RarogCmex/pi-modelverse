@@ -45,6 +45,59 @@
 листинга берутся реальные CNY-цены (однодиапазонные), новые id получают
 семейные эвристики маршрута/thinking/окон (см. «Семейные эвристики»).
 
+## Официальная документация
+
+- GitHub (исходник доков): https://github.com/UCloudDoc-Team/modelverse — в т.ч.
+  `api_doc/text_api/model-competi.md` (матрица протоколов по всем моделям),
+  `api_doc/common/error-code.md` (код‑таблица), `api_doc/text_api/response_api.md`,
+  `api_doc/text_api/claude_compatible.md`, `api_doc/text_api/thinking/*`.
+- AstraFlow mirror: https://astraflow.ucloud.cn/docs/modelverse/ (там же
+  «提高 Prompt Cache 命中率» / improve-prompt-cache).
+- Английское зеркало: www.ucloud-global.com/en/docs/modelverse/API.
+
+Ключевые факты из доков, зашитые в плагин:
+
+### Prompt caching (`X-Session-ID` + `cache_control`)
+
+- **`X-Session-ID`** (HTTP-header): платформа старается держать последовательные
+  запросы одной сессии на одном инференс‑инстансе — растёт hit-rate локального
+  KV-кэша, падает TTFT. Плагин отправляет её на всех трёх поверхностях: anthropic —
+  нативно из `ANTHROPIC_COMPAT` (pi шлёт `x-session-id`, тот же header
+  case-insensitive), openai — через инъекцию fetch (`withSessionAffinity`, provider.ts).
+- **`cache_control`**: только на content-блоках — платформа не поддерживает
+  top-level `cache_control`. pi-ai как раз ставит маркеры только на blocks
+  (tools/system/messages) — безопасно без правок.
+- TTL кэша — 5m (ephemeral) + опция 1h. Это ровно те ChargeItems из прайсинга
+  (`cache_write_5m_tokens` / `cache_write_1h_tokens`). `cacheWrite` в каталоге
+  использует цену 5m-записи.
+
+### Прочие зашитые факты
+
+- `max_completion_tokens` — единственное поддерживаемое имя токен‑лимита на
+  openai-поверхностях для gpt-семейства: зашито в `compat.maxTokensField`.
+- `thinking: {type: enabled|disabled|auto}` (DeepSeek-V3.1) и
+  `chat_template_kwargs: {thinking: bool}` (V3.2) — есть в доках, но в курируемый
+  каталог v0.1 не попали модели с этими требованиями; для новых id из оверлея
+  эти форматы НЕ применяются (безопаснее: без параметров, чем с неверной формой).
+- `/v1/messages` поддерживает только Claude-семейство (claude_compatible.md) —
+  `guessApi` это отражает.
+- gpt-oss-*, grok-семейство, Qwen/QwQ-поколение — chat-only (матрица протоколов
+  model-competi.md) — маршрутизация по умолчанию уже completions.
+- Код‑таблица ошибок: `tokens_too_long` / `model_error` / `sensitive_check_error` —
+  `errors.ts` покрывает первые два; overflow-фраза «Prompt tokens too long» не
+  матчится ни одним пиратском pi-ai, поэтому `message_end` rewrite добавляет
+  маркер `context_length_exceeded:` (auto-compaction срабатывает). Anthropic-фраза
+  `prompt is too long: X > Y maximum` распознаётся pi-ai нативно.
+
+### Живые перепроверки после подключения доков (2026-09-24)
+
+- **claude-opus-5-5: контекст 1 000 000 токенов** (не 200K-оценка) — переполнение
+  ответило `prompt is too long: 1763030 tokens > 1000000 maximum`. `contextWindow`
+  в каталоге обновлён с est→факт.
+- **mimo-v2.6-flash** переварил ~340K токенов на `/responses` без ошибки — каталог
+  262K занижен (точную цифру шлюз не публикует).
+- **gpt-5.6-luna** принял 240K (usage: prompt_tokens=240755) и продолжил работать.
+
 ## Верифицированные факты о шлюзе (lab notes, 2026-09-24)
 
 Все пробы — живые запросы с двумя реальными ключами (`secret.env`, `KEY1`/`KEY2`):

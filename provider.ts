@@ -165,3 +165,38 @@ export function buildModelverseProvider(
     api,
   });
 }
+
+/** Marker so wrapped fetches are not wrapped again (idempotence). */
+const SESSION_AFFINITED = Symbol("modelverse-session-affinity");
+
+/**
+ * Wrap an OpenAI-surface adapter so every request carries `X-Session-ID`.
+ *
+ * The gateway's prompt-cache guide (astraflow.ucloud.cn, 2026-09) recommends a
+ * stable session identifier for scheduling affinity: consecutive requests of
+ * the same session get routed to the same inference instance, raising the
+ * local KV-cache hit rate and lowering TTFT. pi's anthropic adapter covers the
+ * `/v1/messages` route natively (see models.ts ANTHROPIC_COMPAT); this wrapper
+ * provides the equivalent for `openai-completions` / `openai-responses`, where
+ * pi has no session-header hook. Injection composes with a caller-supplied
+ * fetch (pi may pass its own proxying fetch): the wrapper chains onto it.
+ */
+export function withSessionAffinity(api: ProviderStreams): ProviderStreams {
+  const inject = (options: any): any => {
+    const inner: typeof fetch | undefined = options?.fetch;
+    const sessionId: string | undefined = options?.sessionId;
+    if (!sessionId || typeof sessionId !== "string") return options;
+    if ((inner as any)?.[SESSION_AFFINITED]) return options;
+    const wrapped: typeof fetch = (input, init) => {
+      const headers = new Headers(init?.headers ?? undefined);
+      if (!headers.has("x-session-id")) headers.set("x-session-id", sessionId);
+      return (inner ?? fetch)(input, { ...init, headers });
+    };
+    (wrapped as any)[SESSION_AFFINITED] = true;
+    return { ...options, fetch: wrapped };
+  };
+  return {
+    stream: (model, context, options) => api.stream(model, context, inject(options)),
+    streamSimple: (model, context, options) => api.streamSimple(model, context, inject(options)),
+  };
+}

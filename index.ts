@@ -7,13 +7,14 @@
  * `/chat/completions` for the rest), a curated CNY catalog with tiered
  * pricing, key-grant-aware live discovery (the /v1/models view differs per
  * credential: 277 ids for a broad key, 7 for a promo key), `/login` with
- * grant validation, and a readable turn-end hint for the gateway's
- * "No permission to use the model" rejections.
+ * grant validation, `X-Session-ID` scheduling affinity on every surface
+ * (per the official prompt-cache guide), and readable rewrites for the
+ * gateway's "No permission" and `tokens_too_long` rejections.
  *
- * Routing is per-model and single-surface: each id ships the one surface that
- * passed the live tool-call matrix (README "Verified facts"). No before_provider_request
- * payload rewriting is needed — every quirk found so far is expressed as a
- * compat flag on the model (maxTokensField, reasoning gating) instead of a hook.
+ * Routing is per-model and single-surface, cross-checked against the official
+ * protocol matrix (github.com/UCloudDoc-Team/modelverse,
+ * api_doc/text_api/model-competi.md) and the live tool-call matrix — see the
+ * README "Verified facts" section for both.
  */
 
 // NOTE on this import: pi's extension loader aliases the bare
@@ -25,29 +26,25 @@
 // module boundary in the package (same contract as pi-siliconflow).
 import { anthropicMessagesApi, openAICompletionsApi, openAIResponsesApi } from "@earendil-works/pi-ai";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { clarifyGrantError, normalizeOverflowError } from "./errors.ts";
 import { PROVIDER_ID } from "./models.ts";
-import { buildModelverseProvider, type ModelverseApis } from "./provider.ts";
-
-/** Make the opaque grant rejection actionable: name the fix, keep it short. */
-function clarifyGrantError(message: string): string | undefined {
-  const match = /No permission to use the model: apikey \[(.*?)\] not support model \[(.*?)\]/.exec(message);
-  if (!match) return undefined;
-  const [, keyId, modelId] = match;
-  return (
-    `modelverse: ключ [${keyId}] не имеет доступа к модели [${modelId}]. ` +
-    `На этом шлюзе доступные модели зависят от ключа (GET /v1/models). ` +
-    `Перечитайте каталог (обновление моделей в pi) и выберите модель из него, ` +
-    `либо возьмите ключ с более широкими грантами.`
-  );
-}
+import { buildModelverseProvider, withSessionAffinity, type ModelverseApis } from "./provider.ts";
 
 export default function (pi: ExtensionAPI) {
-  // Provider-scoped, error-stop-guarded rewrite of the grant rejection.
+  // Provider-scoped, error-stop-guarded rewrites, in order:
+  //   1. overflow phrasing → `context_length_exceeded:` so auto-compaction runs
+  //      (Modelverse's openai surfaces answer `tokens_too_long` / "Prompt tokens
+  //      too long" — see errors.ts; the anthropic route already matches natively)
+  //   2. the opaque grant rejection → actionable text naming the fix
   pi.on("message_end", (event) => {
     const message = event.message;
     if (message.role !== "assistant") return;
     if (message.stopReason !== "error") return;
     if (message.provider !== PROVIDER_ID) return;
+
+    const overflow = normalizeOverflowError(message.errorMessage ?? "");
+    if (overflow) return { message: { ...message, errorMessage: overflow } };
+
     const clarified = clarifyGrantError(message.errorMessage ?? "");
     if (!clarified) return;
     return { message: { ...message, errorMessage: clarified } };
@@ -82,9 +79,12 @@ export default function (pi: ExtensionAPI) {
     };
   });
 
+  // OpenAI surfaces get the gateway's recommended `X-Session-ID` scheduling
+  // affinity via fetch injection (see provider.ts); the anthropic route gets
+  // it natively from ANTHROPIC_COMPAT (models.ts), so it is not wrapped here.
   const api: ModelverseApis = {
-    "openai-completions": openAICompletionsApi(),
-    "openai-responses": openAIResponsesApi(),
+    "openai-completions": withSessionAffinity(openAICompletionsApi()),
+    "openai-responses": withSessionAffinity(openAIResponsesApi()),
     "anthropic-messages": anthropicMessagesApi(),
   };
 

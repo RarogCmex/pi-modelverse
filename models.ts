@@ -107,11 +107,19 @@ const RESPONSES_COMPAT: OpenAIResponsesCompat = {
 };
 
 /**
- * Anthropic flags: pi defaults kept (cache_control on tools, ttl etc.). The
- * gateway lists 5m and 1h cache-write prices, i.e. long retention exists
- * upstream; unprobed in v0.1, so nothing is disabled.
+ * Anthropic flags. Two deliberate pi defaults kept (cache_control on tools,
+ * ttl), plus session affinity: the gateway's prompt-cache guide recommends an
+ * `X-Session-ID` header for scheduling affinity (docs 2026-09, probed sources:
+ * astraflow.ucloud.cn “提高 Prompt Cache 命中率”). pi's anthropic adapter sends
+ * `x-session-id` natively when sessionAffinityFormat is "openrouter" — same
+ * header, case-insensitive — and pi already places `cache_control` on content
+ * blocks, which is exactly the form this platform supports (top-level
+ * `cache_control` is rejected upstream).
  */
-const ANTHROPIC_COMPAT: AnthropicMessagesCompat = {};
+const ANTHROPIC_COMPAT: AnthropicMessagesCompat = {
+  sendSessionAffinityHeaders: true,
+  sessionAffinityFormat: "openrouter",
+};
 
 /** {base}/v1 → {base}; anthropic SDK appends its own /v1/messages. */
 export function anthropicBaseUrl(baseUrl: string): string {

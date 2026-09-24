@@ -93,6 +93,16 @@ test("cacheWrite is converted, absent write prices report 0", () => {
   assert.equal(mimo.cost.cacheWrite, 0);
 });
 
+test("claude compat carries session affinity for the gateway's X-Session-ID", () => {
+  const claude = entryToModel(CATALOG_BY("claude-opus-5-5"), BASE, 6.7252) as unknown as {
+    compat?: { sendSessionAffinityHeaders?: boolean; sessionAffinityFormat?: string };
+  };
+  assert.equal(claude.compat?.sendSessionAffinityHeaders, true);
+  // "openrouter" format => pi sends `x-session-id`, the header the Modelverse
+  // prompt-cache guide recommends (case-insensitive to X-Session-ID).
+  assert.equal(claude.compat?.sessionAffinityFormat, "openrouter");
+});
+
 test("family guesses route the matrices verified live", () => {
   assert.equal(guessApi("claude-sonnet-5"), "anthropic-messages");
   assert.equal(guessApi("claude-opus-4-8"), "anthropic-messages");

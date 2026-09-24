@@ -93,7 +93,6 @@ export const MODELVERSE_EFFORT = {
 /** Sizes reused across entries. */
 const CTX_1M = 1_048_576;
 const CTX_262K = 262_144;
-const CTX_200K = 204_800;
 const CTX_256K = 262_144;
 const OUT_393K = 393_216;
 const OUT_131K = 131_072;
@@ -110,7 +109,10 @@ export const CATALOG: readonly CatalogEntry[] = [
     id: "claude-opus-5-5",
     name: "Claude Opus 5.5",
     api: "anthropic-messages",
-    contextWindow: CTX_200K, // est: Claude norm; gateway publishes no spec
+    // Probed live 2026-09-24: an oversized prompt answers
+    // "prompt is too long: 1763030 tokens > 1000000 maximum" — the real cap
+    // is 1,000,000 (Anthropic-native phrasing, matched by pi-ai natively).
+    contextWindow: 1_000_000,
     maxTokens: OUT_64K, // est
     input: ["text"], // vision over this bridge unverified → keep text-only
     thinking: { kind: "none" }, // anthropic thinking param unprobed; ship without
