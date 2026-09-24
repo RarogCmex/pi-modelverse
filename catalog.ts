@@ -124,11 +124,13 @@ export const CATALOG: readonly CatalogEntry[] = [
   {
     // Chat+tools requires reasoning_effort:"none" and /responses is the native
     // surface for tools — routed to responses (probed 2026-09-24).
+    // max_output_tokens enforcement on this route is UNVERIFIED: KEY1 (the only
+    // key with a grant) hit its spend quota before the check could run.
     id: "gpt-6-luna",
     name: "GPT-6 Luna",
     api: "openai-responses",
     contextWindow: CTX_400K, // est: tier boundary at 272K, "UNLIMIT" band above
-    maxTokens: OUT_32K, // est
+    maxTokens: OUT_32K, // advisory/unverified (see note above)
     input: ["text", "image"], // listing SKU: text&image input
     thinking: { kind: "none" }, // reasoning.effort accepted on responses; not wired in v0.1
     cny: { input: 0.72, output: 3.6, cacheRead: 0.072, cacheWrite: 0.9 },
@@ -139,7 +141,11 @@ export const CATALOG: readonly CatalogEntry[] = [
     name: "GPT-5.6 Luna",
     api: "openai-completions",
     contextWindow: CTX_400K, // est
-    maxTokens: OUT_32K, // est
+    // Advisory only. Probed 2026-09-24: this family IGNORES max_completion_tokens
+    // AND max_tokens (cap=8 → 163 generated tokens, finish="stop", not "length"),
+    // so the gateway enforces no output cap here and pi's maxTokens cannot bind.
+    // Kept at a conservative value so pi's own budget math stays sane.
+    maxTokens: OUT_32K,
     input: ["text"], // SKU: text & image input — image path unprobed on chat → text-only is safer for an agent
     thinking: { kind: "none" }, // no reasoning_content in responses; plain chat model
     cny: { input: 1.44, output: 8.64, cacheRead: 0.144, cacheWrite: 1.8 },
@@ -150,7 +156,7 @@ export const CATALOG: readonly CatalogEntry[] = [
     name: "GPT-5.6 Terra",
     api: "openai-completions",
     contextWindow: CTX_400K, // est
-    maxTokens: OUT_32K, // est
+    maxTokens: OUT_32K, // advisory: family ignores output caps (see gpt-5.6-luna)
     input: ["text"],
     thinking: { kind: "none" },
     // Standard (non-priority) band of the (0, 272K] tier.
@@ -163,7 +169,7 @@ export const CATALOG: readonly CatalogEntry[] = [
     name: "GPT-5.6 Sol",
     api: "openai-completions",
     contextWindow: CTX_400K, // est
-    maxTokens: OUT_32K, // est
+    maxTokens: OUT_32K, // advisory: family ignores output caps (see gpt-5.6-luna)
     input: ["text"],
     thinking: { kind: "none" },
     // Standard 08:00–08:00 (Beijing) band; discounted window until 2026-12-01
