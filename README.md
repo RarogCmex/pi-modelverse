@@ -64,17 +64,32 @@
 
 ## Официальная документация
 
-- GitHub (исходник доков): https://github.com/UCloudDoc-Team/modelverse (~99 markdown
-  файлов, включая `price.md` с полным прайсом, `best_practice/claudecode.md`,
-  `best_practice/codex.md`, `api_doc/text_api/model-competi.md` — матрица
-  протоколов по всем моделям, `api_doc/common/api-key.md` — контроль ключей,
-  `api_doc/common/error-code.md` — код‑таблица, `api_doc/text_api/response_api.md`,
-  `api_doc/text_api/claude_compatible.md`, `api_doc/text_api/gemini_compatible.md`,
-  `api_doc/text_api/thinking/*`).
-  Локальная копия для работы: `git clone --depth 1` (не входит в репо плагина).
-- AstraFlow mirror: https://astraflow.ucloud.cn/docs/modelverse/ (там же
-  «提高 Prompt Cache 命中率» / improve-prompt-cache).
-- Английское зеркало: www.ucloud-global.com/en/docs/modelverse/API.
+**Канонический веб-сайт доков (есть машиночитаемый markdown):**
+
+- `https://astraflow.ucloud.cn/docs/modelverse` (кит.) и
+  `https://astraflow.ucloud.cn/en-us/docs/modelverse` (англ.)
+- **`.md` на любую страницу**: `GET .../docs/modelverse/api_doc/text_api/models.md` —
+  отдаёт чистый markdown (проверено через `agent-browser`: страница реально рендерит
+  контент, а `.md`-вариант доступен напрямую). Есть также `sitemap.xml` (1063
+  URL, из них сотни под `/docs/modelverse`) и `llms.txt` с точками входа.
+- API reference: `https://astraflow.ucloud.cn/reference/modelverse`
+
+**Первоисточник контента:** `https://github.com/UCloudDoc-Team/modelverse`
+(99 `.md`; обновляется реже — веб-сайт содержит страницы, которых в репо ещё нет,
+например `auto-router`, `model-region`, `openai-batch`, `image_api/midjourney`).
+
+**Зеркала:** `www.ucloud-global.com/en/docs/modelverse/modelverse/*`,
+`docs.scloudsg.com/en/docs/modelverse/*`, `docs.dezai.com/en/docs/modelverse/*`,
+`www.ucdctest-intl.com/en/docs/modelverse/*`.
+
+> ⚠️ **`docs.ucloud.cn/modelverse` НЕ существует.** Проверено через
+> `agent-browser` (страница рендерит «您访问的页面不存在» / page not found), причём
+> HTTP всё равно отдаёт `200` (одна SPA-оболочка на 8039 байт на **любой** путь,
+> включая заведомо несуществующий). У реально размещённых продуктов на этом хосте
+> есть `/_sidebar.md` (напр. `/uhost/_sidebar.md` → 200), а `/modelverse/_sidebar.md`
+> → nginx 404. Настоящие доки живут на astraflow/GitHub, не здесь.
+
+> ⚠️ **`modelverse.com` — посторонний проект**, не UCloud (см. врезку в начале).
 
 Ключевые факты из доков, зашитые в плагин:
 
@@ -94,6 +109,22 @@
 
 ### Прочие зашитые факты
 
+- **Auto Router** (`api_doc/text_api/auto-router.md`): `"model": "auto"`
+  роутит запрос на пул кандидатов (`kimi-k2.6`, `kimi-k2.7-code`, `glm-5.2`,
+  `deepseek-v4-flash/-pro`, `MiniMax-M3`, `qwen3.7-plus/-max`), а фактическую модель
+  возвращает в поле `model` ответа. Есть会话粘性 (по system+первому user) и
+  `allowed_models`. Поэтому `auto` **не исключён** из каталога, а курируется на
+  chat-поверхности; цена не пинуется (0), биллинг — по реально выбранной модели.
+  Ключ без кандидатов получает `no available model for auto`.
+- **Регионы (指定地域推理, `api_doc/model-region.md`)**: суффикс `-sg` (и др.) в id —
+  это指定地域 model IDs `(deepseek-v4-flash-sg, glm-5.2-sg)`: ринуются на узел в регионе
+  и тарифицируются по своему прайсу. Оверлей их пропускает как обычные chat-id.
+- **`finish_reason: normal`** — шлюз возвращает это значение наряду с `stop`/`length`
+  (`struct.md`); pi-ai считает `stop`-подобным, но строка нестандартная — важно при
+  чтении сырых ответов.
+- **usage расширен** (`billing_usage`, `input_tokens`, `output_tokens`,
+  `claude_cache_creation_5_m_tokens`, `claude_cache_creation_1_h_tokens`) — отсюда
+  видно 5m/1h кэш-запись Claude прямо в ответе.
 - `max_completion_tokens` — единственное поддерживаемое имя токен‑лимита на
   openai-поверхностях для gpt-семейства: зашито в `compat.maxTokensField`.
 - `thinking: {type: enabled|disabled|auto}` (DeepSeek-V3.1, **и Doubao** — по

@@ -47,13 +47,19 @@ export interface GatewayModelListing {
 const EXCLUDED =
   /(embed|embedding|rerank|bge-|bge$|^BAAI\b|whisper|tts|(^|[-_/])asr($|[-_/])|-audio|audio-|realtime|transcribe|translate|-mt-|qwen-mt|music|suno|midjourney|grok-imagine|gpt-image|qwen-image|seedream|seedance|kling|vidu|wan2|wan3|happyhorse|pixverse|flux-|easydoc|cicada|exa-web|web-search|speech-|-live$|live-|-batch$|lingdt|lip-sync|sound-v2|-image$|IndexTTS|text-to-sound |music-v1)/i;
 
-/** Exact ids that must never auto-register even if they slip past the regex. */
+/**
+ * Exact ids that must never auto-register even if they slip past the regex.
+ *
+ * `auto` is deliberately NOT here: the gateway documents it as the Auto Router
+ * (`model: "auto"` picks from a candidate pool and reports the actual model in
+ * the response `model` field, api_doc/text_api/auto-router.md). A key whose pool
+ * is empty answers "no available model for auto" (model_error) — a grant
+ * problem, not a routing one.
+ */
 export const SKIP_MODEL_IDS = new Set<string>([
   // "a decisions model and cannot be used with the chat/completions endpoint;
   //  use the /api/alpha/decisions endpoint" — not a chat model.
   "jev-1.13.0",
-  // Router id, unlisted semantics — skip until probed.
-  "auto",
   // Listed with KEY1 but both surfaces 404 (probed 2026-09-24).
   "MiniMax-H3-Max",
   "minimax-h3-context-ir",

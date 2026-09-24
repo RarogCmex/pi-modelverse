@@ -14,6 +14,7 @@ import {
   type GatewayModelListing,
 } from "../discovery.ts";
 import { CATALOG_BY_ID } from "../catalog.ts";
+import { guessApi } from "../models.ts";
 
 /**
  * The captured listing shape (two real keys, 2026-09-24): trimmed to the
@@ -44,12 +45,29 @@ test("SKIP_MODEL_IDS: decisions model and 404-dead flagship never register", () 
       { id: "jev-1.13.0" },
       { id: "MiniMax-H3-Max" },
       { id: "minimax-h3-context-ir" },
-      { id: "auto" },
       { id: "claude-opus-5-5" },
     ],
   });
   assert.deepEqual(ids, ["claude-opus-5-5"]);
   assert.ok(SKIP_MODEL_IDS.has("jev-1.13.0"));
+});
+
+test("Auto Router id is kept and routed to chat (documented, not a mystery id)", () => {
+  assert.deepEqual(parseModelIds({ data: [{ id: "auto" }] }), ["auto"]);
+  assert.equal(guessApi("auto"), "openai-completions");
+  assert.ok(!SKIP_MODEL_IDS.has("auto"));
+});
+
+test("regional -sg model ids are ordinary chat ids (指定地域 inference)", () => {
+  const ids = parseModelIds({
+    data: [
+      { id: "deepseek-v4-flash-sg" },
+      { id: "deepseek-v4-pro-0813-sg" },
+      { id: "glm-5.2-sg" },
+    ],
+  });
+  assert.deepEqual(ids, ["deepseek-v4-flash-sg", "deepseek-v4-pro-0813-sg", "glm-5.2-sg"]);
+  assert.equal(guessApi("deepseek-v4-flash-sg"), "openai-responses");
 });
 
 test("non-chat modalities are filtered: a 277-style listing reduces to chat ids", () => {

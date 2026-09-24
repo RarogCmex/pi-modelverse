@@ -77,9 +77,11 @@ function toCost(cny: CnyPrice, tiers: readonly CnyTier[] | undefined, rate: numb
 /**
  * Chat-completions flags for this gateway.
  *
- *  - maxTokensField "max_completion_tokens": the ONLY field every probed model
- *    accepts (gpt-6-luna rejects `max_tokens` outright; every other family
- *    accepted both, so the OpenAI-generation spelling is the safe default).
+ *  - maxTokensField "max_completion_tokens": the OpenAI-generation spelling. NB
+ *    (probed 2026-09-24): the gpt-5.6 family IGNORES the cap entirely (both this
+ *    field and legacy max_tokens — cap=8 yielded 163 tokens), so there maxTokens
+ *    is advisory for pi's budget math, not enforced upstream. Families that do
+ *    enforce it (gemini, mimo) accept this spelling.
  *  - no strict schema / store / grammar tools / long-cache retention:
  *    none are documented on api.modelverse.cn.
  *  - thinking: completions entries are `none` or `always`, so no thinking
@@ -241,6 +243,9 @@ export function modelName(id: string): string {
  */
 export function guessApi(id: string): GatewayApi {
   const name = modelName(id).toLowerCase();
+  // Auto Router: documented on the Chat Completions surface
+  // (api_doc/text_api/auto-router.md) — called with `"model": "auto"`.
+  if (name === "auto") return "openai-completions";
   if (/^claude/.test(name)) return "anthropic-messages";
   if (/^gpt-5\.6/.test(name)) return "openai-completions";
   if (/^(gpt-6|gpt-5|gpt-4o|gpt-4\.1|o3-|o4-mini|codex)/.test(name)) return "openai-responses";

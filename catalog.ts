@@ -271,6 +271,23 @@ export const CATALOG: readonly CatalogEntry[] = [
     thinking: { kind: "always" },
     cny: { input: 8, output: 28, cacheRead: 2 },
   },
+  {
+    // Auto Router: `"model": "auto"` routes to a candidate pool
+    // (kimi-k2.6, kimi-k2.7-code, glm-5.2, deepseek-v4-flash/-pro, MiniMax-M3,
+    // qwen3.7-plus/-max) and reports the actual model in the response `model`
+    // field. Documented: api_doc/text_api/auto-router.md. Cost cannot be pinned
+    // (it depends on the chosen model), so it is zero — the router's own usage
+    // block still reports the real token counts.
+    id: "auto",
+    name: "Auto Router",
+    api: "openai-completions",
+    contextWindow: CTX_262K, // est: smallest candidate window (deepseek-v4 is 1M)
+    maxTokens: OUT_32K, // est
+    input: ["text"],
+    thinking: { kind: "none" },
+    cny: { input: 0, output: 0, cacheRead: 0 },
+    priceNote: "Auto Router — billed at the routed model's price; not pinnable to ModelCost",
+  },
 ];
 
 /** Fast lookup for discovery's known-id check. */

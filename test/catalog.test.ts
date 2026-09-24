@@ -10,8 +10,9 @@ test("catalog ids are unique", () => {
   assert.equal(new Set(ids).size, ids.length);
 });
 
-test("every entry has real CNY prices (no zeros)", () => {
+test("every entry has real CNY prices (no zeros) — except the Auto Router", () => {
   for (const entry of CATALOG) {
+    if (entry.id === "auto") continue; // billed at the routed model's price
     assert.ok(entry.cny.input > 0, `${entry.id}: input price`);
     assert.ok(entry.cny.output > 0, `${entry.id}: output price`);
     assert.ok(entry.cny.cacheRead >= 0, `${entry.id}: cacheRead present`);
@@ -47,4 +48,11 @@ test("CATALOG_BY_ID mirrors CATALOG", () => {
   for (const entry of CATALOG) {
     assert.equal(CATALOG_BY_ID.get(entry.id), entry);
   }
+});
+
+test("Auto Router entry is curated and rides the documented chat surface", () => {
+  const auto = CATALOG_BY_ID.get("auto");
+  assert.ok(auto, "auto must be curated, not left to the overlay");
+  assert.equal(auto.api, "openai-completions");
+  assert.equal(auto.cny.input, 0, "router price cannot be pinned");
 });
