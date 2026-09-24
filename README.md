@@ -14,6 +14,23 @@
 по грантам, полудинамический каталог (кураторская таблица + семейные
 эвристики для новых id) и настоящие цены в CNY.
 
+> ### ⚠️ Не путать с `modelverse.com` — это ДРУГОЙ, не связанный сервис
+>
+> Плагин работает с шлюзом **UCloud UModelVerse**. Его адреса:
+> `api.modelverse.cn` (Китай), `api.umodelverse.ai` (международный) и региональные
+> `api-sg` / `api-us-ca` / `api-ge-fra.umodelverse.ai` — все на домене
+> **`umodelverse.ai`** или **`modelverse.cn`**.
+>
+> Сайт **`modelverse.com`** — одноимённый, но совершенно посторонний проект
+> («open AI evidence network» — витрина open-weight моделей с прогонами на железе
+> и подпиской через Stripe). У него **нет** `/v1/*` API, он не относится к UCloud,
+> и его нельзя указывать в `MODELVERSE_BASE_URL`. Ключи Modelverse там тоже не работают.
+>
+> Как опознать настоящий шлюз: `GET {base}/v1/models` с валидным ключом отдаёт
+> модели с `"owned_by": "UCloud_UModelverse"` и ChatGPT-подобные id
+> (`gpt-5.6-luna`, `claude-opus-5-5`, `mimo-v2.6-flash`). Дефолт плагина уже
+> указывает на правильный адрес — менять ничего не нужно.
+
 ## Установка
 
 1. Добавьте пакет в `packages` в `~/.pi/agent/settings.json`:
