@@ -184,10 +184,10 @@ export const CATALOG: readonly CatalogEntry[] = [
     id: "mimo-v2.6-flash",
     name: "MiMo v2.6 Flash",
     api: "openai-responses",
-    contextWindow: CTX_262K, // est; ≥340K input accepted live (probe 2026-09-24)
-    // Probed live 2026-09-24 by bisection: 131072 accepted, 131073 → "Param
-    // Incorrect". The gateway does not publish output caps, so this is the
-    // only source.
+    // Model-square spec: MaxModelLen 131072. A live probe accepted 240,768 input
+    // tokens anyway, so the advertised window is a floor, not a hard cap.
+    contextWindow: 131_072,
+    // Square MaxOutputTokens 128 × 1024 = 131072 — matches the live bisection.
     maxTokens: 131_072,
     input: ["text", "image"], // listing SKU: text&image&audio&video input
     thinking: { kind: "effort", levels: MODELVERSE_EFFORT },
@@ -197,8 +197,8 @@ export const CATALOG: readonly CatalogEntry[] = [
     id: "mimo-v2.6-pro",
     name: "MiMo v2.6 Pro",
     api: "openai-responses",
-    contextWindow: CTX_262K, // est
-    maxTokens: 131_072, // probed via the flash sibling (same family cap)
+    contextWindow: 131_072, // square MaxModelLen
+    maxTokens: 131_072, // square 128 × 1024 (flash sibling bisected live)
     input: ["text", "image"],
     thinking: { kind: "effort", levels: MODELVERSE_EFFORT },
     cny: { input: 3, output: 6, cacheRead: 0.025 },
@@ -207,8 +207,11 @@ export const CATALOG: readonly CatalogEntry[] = [
     id: "deepseek-v4.1-flash",
     name: "DeepSeek V4.1 Flash",
     api: "openai-responses",
-    contextWindow: CTX_1M, // family-informed (siliconflow-verified DeepSeek-V4 sizes)
-    maxTokens: OUT_393K, // family-informed
+    contextWindow: 131_072, // square MaxModelLen (the 1M figure belongs to the -flash sibling)
+    // Square advertises 384 × 1024 = 393216 output, but that exceeds the window
+    // the same endpoint reports — contradictory vendor data, so capped to the
+    // window (pi would otherwise send an invalid max_tokens).
+    maxTokens: 131_072,
     input: ["text"],
     thinking: { kind: "effort", levels: MODELVERSE_EFFORT },
     // Peak band (09:00–12:00, 14:00–18:00 Beijing); off-peak is half.
@@ -219,8 +222,8 @@ export const CATALOG: readonly CatalogEntry[] = [
     id: "qwen3.8-max",
     name: "Qwen3.8 Max",
     api: "openai-responses",
-    contextWindow: CTX_256K, // est
-    maxTokens: CTX_256K, // est
+    contextWindow: 131_072, // square MaxModelLen (also publishes MaxInputTokens 991)
+    maxTokens: 131_072, // square 131 × 1024 = 134144, capped to the window
     input: ["text"],
     thinking: { kind: "effort", levels: MODELVERSE_EFFORT },
     cny: { input: 12, output: 36, cacheRead: 1.5, cacheWrite: 15 },
@@ -229,8 +232,8 @@ export const CATALOG: readonly CatalogEntry[] = [
     id: "kimi-k3",
     name: "Kimi K3",
     api: "openai-responses",
-    contextWindow: CTX_262K, // family-informed
-    maxTokens: CTX_262K, // family-informed
+    contextWindow: 131_072, // square MaxModelLen
+    maxTokens: 131_072, // square advertises 1000 × 1024 = 1M, but the window is 131072
     input: ["text"],
     thinking: { kind: "effort", levels: MODELVERSE_EFFORT },
     cny: { input: 20, output: 100, cacheRead: 2 },
@@ -264,8 +267,10 @@ export const CATALOG: readonly CatalogEntry[] = [
     id: "glm-5.3",
     name: "GLM-5.3",
     api: "openai-completions",
-    contextWindow: CTX_1M, // family-informed
-    maxTokens: OUT_131K, // family-informed
+    // The square advertises Responses:true here, but a live probe returned 200
+    // with an empty output array — the probe wins; chat-only.
+    contextWindow: 131_072, // square MaxModelLen
+    maxTokens: 131_072, // square 128 × 1024
     input: ["text"],
     // Reasoning streams as reasoning_content on chat with no toggle verified.
     thinking: { kind: "always" },

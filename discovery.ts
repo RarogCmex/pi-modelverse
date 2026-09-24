@@ -22,6 +22,7 @@ import type { RefreshModelsContext } from "@earendil-works/pi-ai";
 import type { CnyPrice } from "./catalog.ts";
 import { CATALOG_BY_ID } from "./catalog.ts";
 import { type ModelverseModel, unknownIdToModel, cnyPerUsd } from "./models.ts";
+import { fetchSquareCatalog, type SquareSpec } from "./square.ts";
 
 /** Payload of `GET /v1/models`. */
 interface ModelsResponse {
@@ -130,6 +131,7 @@ export function buildOverlay(
   baseUrl: string,
   rate: number,
   known: ReadonlySet<string> = new Set(CATALOG_BY_ID.keys()),
+  specs?: ReadonlyMap<string, SquareSpec>,
 ): ModelverseModel[] {
   const payload: ModelsResponse = { data: entries.slice() };
   const ids = parseModelIds(payload);
@@ -139,7 +141,7 @@ export function buildOverlay(
   }
   return ids
     .filter((id) => !known.has(id) && !SKIP_MODEL_IDS.has(id))
-    .map((id) => unknownIdToModel(id, extractCnyPrice(byId.get(id)), baseUrl, rate));
+    .map((id) => unknownIdToModel(id, extractCnyPrice(byId.get(id)), baseUrl, rate, specs?.get(id)));
 }
 
 /** Resolve the bearer token pi's auth layer did not hand us (env-only setups). */
@@ -182,7 +184,11 @@ export async function fetchModelverseModels(
       typeof listing === "object" && listing !== null && Array.isArray((listing as ModelsResponse).data)
         ? ((listing as ModelsResponse).data as GatewayModelListing[])
         : [];
-    return buildOverlay(entries, baseUrl, cnyPerUsd());
+    // Enrich with the gateway's own model-square specs when reachable (no auth
+    // needed): real windows/output caps instead of family guesses. Failure is
+    // silent — the overlay then falls back to guesses, i.e. prior behaviour.
+    const specs = await fetchSquareCatalog(8_000, context.signal);
+    return buildOverlay(entries, baseUrl, cnyPerUsd(), undefined, specs);
   } catch {
     return [];
   } finally {

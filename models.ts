@@ -18,6 +18,7 @@
  */
 
 import type { AnthropicMessagesCompat, Model, ModelCost, OpenAICompletionsCompat, OpenAIResponsesCompat } from "@earendil-works/pi-ai";
+import type { SquareSpec } from "./square.ts";
 import {
   CATALOG,
   MODELVERSE_EFFORT,
@@ -304,13 +305,17 @@ export function unknownIdToModel(
   pricing: CnyPrice | undefined,
   baseUrl: string,
   rate: number,
+  spec?: SquareSpec,
 ): ModelverseModel {
   const api = guessApi(id);
+  const guessed = guessWindows(id);
   const entry: CatalogEntry = {
     id,
     name: modelName(id),
     api,
-    ...guessWindows(id),
+    // The model square's advertised window beats a family guess when present.
+    contextWindow: spec?.contextWindow ?? guessed.contextWindow,
+    maxTokens: spec?.maxTokens ?? guessed.maxTokens,
     input: guessInput(id),
     thinking: guessThinking(id, api),
     cny: pricing ?? { input: 0, output: 0, cacheRead: 0 },
