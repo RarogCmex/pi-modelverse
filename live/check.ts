@@ -12,6 +12,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { probeGrants } from "../provider.ts";
 import { CATALOG } from "../catalog.ts";
+import { createMemoryGrantStore, filterModelsByGrants } from "../grants.ts";
+import { fetchModelverseModels } from "../discovery.ts";
+import { buildModels } from "../models.ts";
 
 interface SecretEnv {
   API?: string;
@@ -59,6 +62,35 @@ async function main() {
     if (!key) continue;
     const probe = await probeGrants(key, api);
     console.log(`${name}: http=${probe.status} granted=${probe.granted} sample=${probe.sample.join(", ")}`);
+  }
+
+  // Picker view: exactly what pi's model selector will show for each key.
+  // Discovery records the raw grant set, the filter replays it against the
+  // curated catalog — the check that KEY2 no longer lists claude/gpt-6/glm.
+  for (const name of ["KEY1", "KEY2"]) {
+    const key = env[name];
+    if (!key) continue;
+    const store = createMemoryGrantStore();
+    const overlay = await fetchModelverseModels(
+      api,
+      {
+        credential: { type: "api_key", key },
+        allowNetwork: true,
+        signal: new AbortController().signal,
+        publish: async () => true,
+      } as never,
+      8_000,
+      store,
+    );
+    const all = [...buildModels(api), ...overlay];
+    const visible = filterModelsByGrants(all, key, store);
+    console.log(
+      `\npicker view (${name}): granted=${store.lookup(key)?.ids.length ?? "unknown"} ` +
+        `catalog=${all.length} visible=${visible.length} overlay=${overlay.length}`,
+    );
+    console.log(`  ${visible.map((model) => model.id).join(", ")}`);
+    const hidden = all.filter((model) => !visible.some((v) => v.id === model.id)).map((m) => m.id);
+    if (hidden.length) console.log(`  hidden: ${hidden.join(", ")}`);
   }
 
   // Cheap live smoke on the chat surface. Quota-aware: a key whose spend budget

@@ -23,6 +23,7 @@ import type { CnyPrice } from "./catalog.ts";
 import { CATALOG_BY_ID } from "./catalog.ts";
 import { type ModelverseModel, unknownIdToModel, cnyPerUsd } from "./models.ts";
 import { fetchSquareCatalog, type SquareSpec } from "./square.ts";
+import type { GrantStore } from "./grants.ts";
 
 /** Payload of `GET /v1/models`. */
 interface ModelsResponse {
@@ -162,6 +163,7 @@ export async function fetchModelverseModels(
   baseUrl: string,
   context: RefreshModelsContext,
   timeoutMs = 8_000,
+  grants?: GrantStore,
 ): Promise<ModelverseModel[]> {
   if (!context.allowNetwork || context.signal.aborted) return [];
   const key = resolveKey(context);
@@ -184,6 +186,16 @@ export async function fetchModelverseModels(
       typeof listing === "object" && listing !== null && Array.isArray((listing as ModelsResponse).data)
         ? ((listing as ModelsResponse).data as GatewayModelListing[])
         : [];
+    // Record the RAW id set for this key (before chat filtering): that is the
+    // gateway's own statement of what this key may use, and it is what
+    // `filterModels` replays against the curated catalog. Recording only on a
+    // successful listing preserves the previous view across outages.
+    grants?.record(
+      key,
+      entries.flatMap((entry) =>
+        typeof entry?.id === "string" && entry.id.trim() ? [entry.id.trim()] : [],
+      ),
+    );
     // Enrich with the gateway's own model-square specs when reachable (no auth
     // needed): real windows/output caps instead of family guesses. Failure is
     // silent — the overlay then falls back to guesses, i.e. prior behaviour.

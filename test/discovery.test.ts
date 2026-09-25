@@ -9,10 +9,12 @@ import { fileURLToPath } from "node:url";
 import {
   buildOverlay,
   extractCnyPrice,
+  fetchModelverseModels,
   parseModelIds,
   SKIP_MODEL_IDS,
   type GatewayModelListing,
 } from "../discovery.ts";
+import { createMemoryGrantStore } from "../grants.ts";
 import { CATALOG_BY_ID } from "../catalog.ts";
 import { guessApi } from "../models.ts";
 
@@ -193,3 +195,73 @@ test("parseModelIds tolerates garbage bodies", () => {
   assert.deepEqual(parseModelIds({ data: "nope" }), []);
   assert.deepEqual(parseModelIds({ data: [{ id: 42 }, null, { id: " x " }, { id: "" }] }), ["x"]);
 });
+
+test("fetchModelverseModels records the RAW grant set (non-chat ids included)", async () => {
+  const store = createMemoryGrantStore();
+  const restore = stubFetch((url) => {
+    if (url.includes("/models")) return new Response(JSON.stringify(FIXTURE_KEY2), { status: 200 });
+    return new Response("nope", { status: 404 }); // model-square: unavailable, silently ignored
+  });
+  try {
+    await fetchModelverseModels("https://api.modelverse.cn/v1", refreshContext("k2"), 8_000, store);
+  } finally {
+    restore();
+  }
+  // The overlay skips jev (decisions model) — but the grant record is the
+  // gateway's raw statement, so jev is in it: membership filtering answers
+  // "may this key use this id", not "is it a chat model".
+  assert.deepEqual(new Set(store.lookup("k2")?.ids), new Set([
+    "mimo-v2.6-flash",
+    "mimo-v2.6-pro",
+    "jev-1.13.0",
+    "gemini-3.8-flash",
+    "gemini-3.7-flash",
+    "gpt-5.6-luna",
+    "gpt-5.6-terra",
+  ]));
+  assert.equal(store.lookup("other-key"), undefined);
+});
+
+test("fetchModelverseModels records nothing when the listing fails or is offline", async () => {
+  const store = createMemoryGrantStore();
+
+  const restore = stubFetch(() => new Response("denied", { status: 401 }));
+  try {
+    await fetchModelverseModels("https://api.modelverse.cn/v1", refreshContext("k2"), 8_000, store);
+  } finally {
+    restore();
+  }
+  assert.equal(store.lookup("k2"), undefined, "a failure must preserve the previous grant view");
+
+  // Offline phase (allowNetwork=false) must not touch the store either.
+  await fetchModelverseModels(
+    "https://api.modelverse.cn/v1",
+    { ...(refreshContext("k2") as object), allowNetwork: false } as never,
+    8_000,
+    store,
+  );
+  assert.equal(store.lookup("k2"), undefined);
+
+  // No key resolved → nothing to record against.
+  await fetchModelverseModels("https://api.modelverse.cn/v1", refreshContext(undefined), 8_000, store);
+  assert.equal(store.lookup("k2"), undefined);
+});
+
+function refreshContext(key: string | undefined): never {
+  return {
+    credential: key ? { type: "api_key", key } : undefined,
+    allowNetwork: true,
+    signal: new AbortController().signal,
+    publish: async () => true,
+  } as never;
+}
+
+/** Replace the global fetch; returns a restore function. */
+function stubFetch(handler: (url: string) => Response): () => void {
+  const original = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL) =>
+    handler(typeof input === "string" ? input : input instanceof URL ? input.href : input.url)) as typeof fetch;
+  return () => {
+    globalThis.fetch = original;
+  };
+}

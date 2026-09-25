@@ -12,10 +12,16 @@ import {
   envApiKeyAuth,
   type ApiKeyAuth,
   type AuthInteraction,
+  type Credential,
   type Provider,
   type ProviderStreams,
 } from "@earendil-works/pi-ai";
 import { fetchModelverseModels } from "./discovery.ts";
+import {
+  createMemoryGrantStore,
+  filterModelsByGrants,
+  type GrantStore,
+} from "./grants.ts";
 import {
   buildModels,
   cnyPerUsd,
@@ -54,6 +60,8 @@ export interface GrantProbeResult {
   status: number;
   granted: number;
   sample: string[];
+  /** Every id in the listing, in order — the exact grant set for this key. */
+  ids: string[];
 }
 
 /**
@@ -77,29 +85,49 @@ export async function probeGrants(
     });
     let granted = 0;
     let sample: string[] = [];
+    let ids: string[] = [];
     if (response.ok) {
       const listing = (await response.json()) as { data?: { id?: unknown }[] };
-      const ids = Array.isArray(listing?.data)
+      ids = Array.isArray(listing?.data)
         ? listing.data.map((entry) => entry.id).filter((id): id is string => typeof id === "string")
         : [];
       granted = ids.length;
       sample = ids.slice(0, 5);
     }
-    return { ok: response.ok, status: response.status, granted, sample };
+    return { ok: response.ok, status: response.status, granted, sample, ids };
   } finally {
     clearTimeout(timer);
   }
 }
 
 /**
+ * The key `filterModels` should judge grants by: stored credential first
+ * (pi hands `filterModels` the *stored* credential, which is undefined for
+ * env-only setups), then `MODELVERSE_API_KEY`. Mirrors discovery's
+ * `resolveKey` so both layers agree on which key is effective.
+ */
+export function resolveEffectiveKey(
+  credential: Credential | undefined,
+  env: EnvReader = processEnv,
+): string | undefined {
+  const stored = credential?.type === "api_key" ? credential.key?.trim() : undefined;
+  if (stored) return stored;
+  const fromEnv = env(API_KEY_ENV_VAR)?.trim();
+  return fromEnv ? fromEnv : undefined;
+}
+
+/**
  * Stored-key-then-env auth (`/login` → `MODELVERSE_API_KEY`), with a Modelverse
  * twist: the entered key is validated against the gateway and the grant count
  * is surfaced in the login flow — that count is the real key→model mapping on
- * this gateway, not a fixed catalog.
+ * this gateway, not a fixed catalog. The probe's full id set is recorded into
+ * the grant store, so the model picker filters by the new key immediately —
+ * without waiting for the next discovery refresh.
  */
 export function modelverseApiKeyAuth(
   baseUrl: string,
   fetchImpl: typeof fetch = fetch,
+  grants?: GrantStore,
 ): ApiKeyAuth {
   const base = envApiKeyAuth(API_KEY_AUTH_NAME, [API_KEY_ENV_VAR]);
   return {
@@ -134,6 +162,9 @@ export function modelverseApiKeyAuth(
           `Gateway rejected the key (HTTP ${probe.status}). Check the key in the Modelverse console and retry /login.`,
         );
       }
+      // Record even a 0-grant listing: an empty set is the truth about this
+      // key, and the filter below will (correctly) hide the whole catalog.
+      grants?.record(key, probe.ids);
       hint =
         probe.granted > 0
           ? `Key accepted: ${probe.granted} models granted (e.g. ${probe.sample.join(", ")}). The model picker and discovery overlay follow this key.`
@@ -154,14 +185,21 @@ export function modelverseApiKeyAuth(
 export function buildModelverseProvider(
   api: ModelverseApis,
   baseUrl: string = resolveBaseUrl(),
+  grants: GrantStore = createMemoryGrantStore(),
 ): Provider<GatewayApi> {
   return createProvider<GatewayApi>({
     id: PROVIDER_ID,
     name: "Modelverse",
     baseUrl,
-    auth: { apiKey: modelverseApiKeyAuth(baseUrl) },
+    auth: { apiKey: modelverseApiKeyAuth(baseUrl, undefined, grants) },
     models: buildModels(baseUrl, cnyPerUsd(processEnv)),
-    fetchModels: (context) => fetchModelverseModels(baseUrl, context),
+    fetchModels: (context) => fetchModelverseModels(baseUrl, context, undefined, grants),
+    // Credential-scoped availability: `Models.getAvailable()` (the picker,
+    // /model resolution, list-models) applies this after the auth check.
+    // Synchronous by contract — the grant store is fed by the async paths
+    // (discovery refresh, login probe) and replayed here.
+    filterModels: (models, credential) =>
+      filterModelsByGrants(models, resolveEffectiveKey(credential), grants),
     api,
   });
 }

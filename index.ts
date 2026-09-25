@@ -6,10 +6,12 @@
  * `/responses` for the reasoners / OpenAI-generation models, OpenAI
  * `/chat/completions` for the rest), a curated CNY catalog with tiered
  * pricing, key-grant-aware live discovery (the /v1/models view differs per
- * credential: 277 ids for a broad key, 7 for a promo key), `/login` with
- * grant validation, `X-Session-ID` scheduling affinity on every surface
- * (per the official prompt-cache guide), and readable rewrites for the
- * gateway's "No permission" and `tokens_too_long` rejections.
+ * credential: 277 ids for a broad key, 7 for a promo key), per-key model
+ * filtering in the picker (a key never shows models the gateway does not
+ * grant it — see grants.ts), `/login` with grant validation, `X-Session-ID`
+ * scheduling affinity on every surface (per the official prompt-cache guide),
+ * and readable rewrites for the gateway's "No permission" and
+ * `tokens_too_long` rejections.
  *
  * Routing is per-model and single-surface, cross-checked against the official
  * protocol matrix (github.com/UCloudDoc-Team/modelverse,
@@ -25,8 +27,11 @@
 // so `npm run typecheck` sees what pi sees. This is the only pi-runtime-only
 // module boundary in the package (same contract as pi-siliconflow).
 import { anthropicMessagesApi, openAICompletionsApi, openAIResponsesApi } from "@earendil-works/pi-ai";
+import { getAgentDir } from "@earendil-works/pi-coding-agent";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { join } from "node:path";
 import { clarifyGrantError, clarifyPermissionError, normalizeOverflowError } from "./errors.ts";
+import { createFileGrantStore } from "./grants.ts";
 import { PROVIDER_ID } from "./models.ts";
 import { buildModelverseProvider, withSessionAffinity, type ModelverseApis } from "./provider.ts";
 
@@ -93,5 +98,11 @@ export default function (pi: ExtensionAPI) {
     "anthropic-messages": anthropicMessagesApi(),
   };
 
-  pi.registerProvider(buildModelverseProvider(api));
+  // Per-key grant cache, loaded synchronously here so the model picker filters
+  // correctly on the very first render after a pi restart — before the async
+  // discovery refresh has had a chance to run. Lives next to pi's own state;
+  // keyed by key fingerprint, never by the raw key.
+  const grants = createFileGrantStore(join(getAgentDir(), "modelverse-grants.json"));
+
+  pi.registerProvider(buildModelverseProvider(api, undefined, grants));
 }
