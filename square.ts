@@ -9,7 +9,18 @@
  *
  * and every entry carries the numbers no other endpoint exposes:
  *
- *   MaxModelLen        context window in tokens (1048576 / 262144 / 204800 / 131072 / 32768)
+ *   MaxModelLen        legacy context window in tokens (1048576 / 262144 / 204800 / 131072 / 32768)
+ *   MaxModelLenNew     refreshed context window in **1024-token units** (same
+ *                      unit as MaxOutputTokens). Unit verified by audit
+ *                      2026-09-25: New×1024 equals legacy on 27 of 57 entries
+ *                      carrying both (200→204800 ×11, 128→131072, 32→32768).
+ *                      Of the 30 disagreements, 25 have legacy frozen at the
+ *                      platform default 131072 while New carries the real
+ *                      window — mimo-v2.6 New=1000 (=1,024,000) matches
+ *                      upstream's published 1M, legacy does not (live-probed
+ *                      false: ≥683K input accepted); zai-org/glm-4.6 New=200K
+ *                      and BAAI/bge-m3 New=8K likewise match vendor specs.
+ *                      0/null = not refreshed, legacy still applies.
  *   MaxOutputTokens    output cap in **1024-token units** — verified: 128 → 131072
  *                      (matches the live mimo bisection exactly), 384 → 393216
  *   MaxInputTokens     extra input-side cap where the gateway sets one, else 0
@@ -22,8 +33,9 @@
  * not a model entry).
  *
  * Trust level: these are the vendor's advertised specs, not probed limits — a
- * live probe showed mimo accepting 240,768 input tokens despite an advertised
- * MaxModelLen of 131,072, so values are advisory-to-real depending on the model.
+ * live probe showed mimo accepting 683,309 input tokens despite a legacy
+ * MaxModelLen of 131,072 (the refreshed MaxModelLenNew says 1M, matching
+ * upstream), so values are advisory-to-real depending on the model.
  * The overlay uses them in preference to family guesses, and never overrides
  * curated entries.
  */
@@ -45,12 +57,13 @@ export const SQUARE_ACTION = "ListUFSquareModelGuest";
 interface SquareModel {
   Name?: unknown;
   MaxModelLen?: unknown;
+  MaxModelLenNew?: unknown;
   MaxOutputTokens?: unknown;
   MaxInputTokens?: unknown;
   ApiProtocols?: Record<string, unknown>;
 }
 
-/** `MaxOutputTokens` is expressed in 1024-token units (verified live). */
+/** `MaxOutputTokens` and `MaxModelLenNew` are expressed in 1024-token units (verified live). */
 const OUTPUT_UNIT = 1024;
 
 function asPositiveInt(value: unknown): number | undefined {
@@ -62,7 +75,12 @@ function asPositiveInt(value: unknown): number | undefined {
 /** Parse one square entry into a spec, or undefined when it carries no numbers. */
 export function parseSquareModel(entry: SquareModel | undefined): SquareSpec | undefined {
   if (!entry || typeof entry !== "object") return undefined;
-  const contextWindow = asPositiveInt(entry.MaxModelLen);
+  // Refreshed window (1024-units) wins over the legacy token field: where the
+  // two disagree the legacy one is stale (mimo-v2.6: legacy 131072 vs New 1000
+  // = 1,024,000 — upstream publishes 1M and a live probe accepted 683,309).
+  const legacyWindow = asPositiveInt(entry.MaxModelLen);
+  const refreshedWindow = asPositiveInt(entry.MaxModelLenNew);
+  const contextWindow = refreshedWindow ? refreshedWindow * OUTPUT_UNIT : legacyWindow;
   const rawOutput = asPositiveInt(entry.MaxOutputTokens);
   const maxInputTokens = asPositiveInt(entry.MaxInputTokens);
   const protocolsRaw = entry.ApiProtocols;

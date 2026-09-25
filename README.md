@@ -104,7 +104,7 @@
 | `claude-opus-5-5` | anthropic | **1M** (прожито) | 65 536 est | cacheWrite 5m ¥36 (1h ¥57.6) |
 | `gpt-6-luna` | responses | 409 600 est | 32 768 est | chat+tools требует `reasoning_effort:"none"` |
 | `gpt-5.6-luna` / `-terra` / `-sol` | completions | 409 600 est | 32 768 справочно | выходной кап **игнорируется** шлюзом |
-| `mimo-v2.6-flash` / `-pro` | responses | 131 072 (пол ≥240K) | **131 072** | effort-карта |
+| `mimo-v2.6-flash` / `-pro` | responses | **1 024 000** (upstream 1M; прожито ≥683K) | **131 072** (бисекция) | effort-карта |
 | `deepseek-v4.1-flash` | responses | 131 072 | 131 072 | peak/off-peak цены |
 | `qwen3.8-max` | responses | 131 072 | 131 072 | `MaxInputTokens` 991 |
 | `kimi-k3` | responses | 131 072 | 131 072 | кап вендора > окна — обрезан |
@@ -118,7 +118,10 @@
 - [`research/live-probes-2026-09-24.md`](research/live-probes-2026-09-24.md) —
   матрица поверхностей, tool-round-trip, enforcement капов, окна, квоты;
 - [`research/model-square-2026-09-24.md`](research/model-square-2026-09-24.md) —
-  полная таблица официального каталога (124 записи) с окнами и капами.
+  полная таблица официального каталога (124 записи) с окнами и капами;
+- [`research/mimo-v26-1m-window-2026-09-25.md`](research/mimo-v26-1m-window-2026-09-25.md) —
+  окно 1M у mimo-v2.6: upstream-доки Xiaomi, `MaxModelLenNew` в model square,
+  живая проба на 683K входных токенов.
 
 ### Семейные эвристики (для новых id из оверлея)
 
@@ -194,7 +197,7 @@
 ## Разработка
 
 ```
-npm test         # node --test — 51 тест, офлайн, сеть мокается
+npm test         # node --test — 70 тестов, офлайн, сеть мокается
 npm run typecheck
 node live/check.ts   # живые пробы по secret.env (quota-aware)
 ```
@@ -216,6 +219,12 @@ node live/check.ts   # живые пробы по secret.env (quota-aware)
 - `ApiProtocols` из guest-каталога расходится с живой работой (mimo: каталог не
   заявляет Responses, а он работает) — числа берём из каталога, **маршрут только из
   живой пробы**.
+- Legacy-поле `MaxModelLen` в guest-каталоге у части моделей — устаревшая
+  заглушка 131072 (mimo-v2.6, kimi-k3, glm-5.3, deepseek-v4.1-flash, qwen3.7/3.8…);
+  обновлённое `MaxModelLenNew` (×1024) у них несёт 1M. `square.ts` читает New с
+  приоритетом; в курируемой таблице на 1M переведён только mimo-v2.6 (upstream-доки
+  + живая проба ≥683K, см. `research/mimo-v26-1m-window-2026-09-25.md`). Остальные —
+  кандидаты на верификацию.
 - Кэш-ретеншен и strict schema не заявлены (compat-флаги консервативны).
 - Слэш-команда `/modelverse` (status/url/models) не завезена — в v0.1 всё решается
   `/login` + оверлеем.

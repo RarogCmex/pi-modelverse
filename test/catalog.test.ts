@@ -56,3 +56,16 @@ test("Auto Router entry is curated and rides the documented chat surface", () =>
   assert.equal(auto.api, "openai-completions");
   assert.equal(auto.cny.input, 0, "router price cannot be pinned");
 });
+
+test("mimo-v2.6 carries the upstream 1M window; the square's legacy 131072 was a floor", () => {
+  // Upstream (mimo.mi.com, 2026-09-22): Context Window 1M, Maximum Output 128K;
+  // square `MaxModelLenNew: 1000` × 1024 = 1,024,000; live-probed ≥683,309
+  // input tokens (research/mimo-v26-1m-window-2026-09-25.md).
+  for (const id of ["mimo-v2.6-flash", "mimo-v2.6-pro"]) {
+    const entry = CATALOG_BY_ID.get(id);
+    assert.ok(entry, id);
+    assert.equal(entry.contextWindow, 1_024_000, `${id}: window`);
+    assert.equal(entry.maxTokens, 131_072, `${id}: output cap stays live-bisected 128K`);
+    assert.ok(entry.maxTokens < entry.contextWindow, `${id}: output must fit the window`);
+  }
+});

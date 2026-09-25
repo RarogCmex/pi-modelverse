@@ -279,6 +279,10 @@ export function guessInput(id: string): ("text" | "image")[] {
 
 export function guessWindows(id: string): { contextWindow: number; maxTokens: number } {
   const name = modelName(id).toLowerCase();
+  // Upstream MiMo docs (mimo.mi.com): the whole text family (v2.5→v2.6) is
+  // 1M context / 128K output; the square's refreshed MaxModelLenNew agrees
+  // (1000 × 1024). Live-probed ≥683,309 on mimo-v2.6-flash (2026-09-25).
+  if (/^mimo/.test(name)) return { contextWindow: CTX_1000K, maxTokens: OUT_131K };
   if (/^deepseek-v4/.test(name)) return { contextWindow: CTX_1M, maxTokens: OUT_393K };
   if (/^glm-5/.test(name)) return { contextWindow: CTX_1M, maxTokens: OUT_131K };
   if (/^(kimi-k3|qwen3\.[78])/.test(name)) return { contextWindow: CTX_262K, maxTokens: CTX_262K };
@@ -289,6 +293,7 @@ export function guessWindows(id: string): { contextWindow: number; maxTokens: nu
 }
 
 const CTX_1M = 1_048_576;
+const CTX_1000K = 1_024_000;
 const CTX_262K = 262_144;
 const CTX_400K = 409_600;
 const CTX_200K = 204_800;

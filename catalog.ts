@@ -99,6 +99,8 @@ const OUT_131K = 131_072;
 const OUT_64K = 65_536;
 const OUT_32K = 32_768;
 const CTX_400K = 409_600;
+/** The square's refreshed `MaxModelLenNew: 1000` × 1024 — upstream's "1M". */
+const CTX_1000K = 1_024_000;
 
 /** Input-size tier boundary the gateway itself prices at (gpt-5.6/6 family). */
 const TIER_272K = 272_000;
@@ -184,10 +186,17 @@ export const CATALOG: readonly CatalogEntry[] = [
     id: "mimo-v2.6-flash",
     name: "MiMo v2.6 Flash",
     api: "openai-responses",
-    // Model-square spec: MaxModelLen 131072. A live probe accepted 240,768 input
-    // tokens anyway, so the advertised window is a floor, not a hard cap.
-    contextWindow: 131_072,
-    // Square MaxOutputTokens 128 × 1024 = 131072 — matches the live bisection.
+    // Upstream (Xiaomi MiMo docs mimo.mi.com, updated 2026-09-22, + HF model
+    // card): Context Window 1M. The square's legacy `MaxModelLen` still says
+    // 131072, but its refreshed `MaxModelLenNew` says 1000 (×1024 = 1,024,000,
+    // same shape as mimo-v2.5's window). Live probes agree the old figure was a
+    // floor: 240,768 tokens accepted 2026-09-24, 683,309 accepted 2026-09-25
+    // with mid+end markers echoed (whole prompt processed); a ~1.02M prompt
+    // passed admission with HTTP 200, no `tokens_too_long`. See
+    // research/mimo-v26-1m-window-2026-09-25.md.
+    contextWindow: CTX_1000K,
+    // Square MaxOutputTokens 128 × 1024 = 131072 — matches the live bisection
+    // (131072 OK / 131073 "Param Incorrect") and upstream "Maximum Output: 128K".
     maxTokens: 131_072,
     input: ["text", "image"], // listing SKU: text&image&audio&video input
     thinking: { kind: "effort", levels: MODELVERSE_EFFORT },
@@ -197,8 +206,8 @@ export const CATALOG: readonly CatalogEntry[] = [
     id: "mimo-v2.6-pro",
     name: "MiMo v2.6 Pro",
     api: "openai-responses",
-    contextWindow: 131_072, // square MaxModelLen
-    maxTokens: 131_072, // square 128 × 1024 (flash sibling bisected live)
+    contextWindow: CTX_1000K, // upstream 1M; square `MaxModelLenNew: 1000` (see flash sibling)
+    maxTokens: 131_072, // upstream 128K; square 128 × 1024 (flash sibling bisected live)
     input: ["text", "image"],
     thinking: { kind: "effort", levels: MODELVERSE_EFFORT },
     cny: { input: 3, output: 6, cacheRead: 0.025 },

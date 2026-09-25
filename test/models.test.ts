@@ -133,6 +133,18 @@ test("guessInput: claude/mimo/gemini/VL families take images", () => {
   assert.deepEqual(guessInput("glm-5.3"), ["text"]);
 });
 
+test("guessWindows: the mimo family is 1M/128K upstream, not the square's legacy 131072", () => {
+  for (const id of ["mimo-v2.6-flash", "mimo-v2.6-pro", "mimo-v2.5", "mimo-v3.0-pro"]) {
+    assert.deepEqual(guessWindows(id), { contextWindow: 1_024_000, maxTokens: 131_072 }, id);
+  }
+});
+
+test("unknown mimo id inherits the 1M family window via unknownIdToModel", () => {
+  const model = unknownIdToModel("mimo-v3.0-pro", { input: 4, output: 8, cacheRead: 0.04 }, BASE, 6.7252);
+  assert.equal(model.contextWindow, 1_024_000);
+  assert.equal(model.maxTokens, 131_072);
+});
+
 test("unknown without listing price is zero-cost, not invented", () => {
   const model = unknownIdToModel("some-brand-new-id", undefined, BASE, 6.7252);
   assert.deepEqual(model.cost, { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
