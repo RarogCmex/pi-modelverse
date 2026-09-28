@@ -1,9 +1,17 @@
 {
-  "name": "pi-modelverse",
-  "private": true,
+  "name": "@rarogcmex/pi-modelverse",
   "version": "0.1.0",
   "description": "Modelverse (api.modelverse.cn) provider for pi — three-protocol routing (anthropic / responses / chat), key-grant-aware live discovery, CNY catalog with tiered pricing.",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RarogCmex/pi-modelverse.git"
+  },
+  "bugs": {
+    "url": "https://github.com/RarogCmex/pi-modelverse/issues"
+  },
+  "homepage": "https://github.com/RarogCmex/pi-modelverse#readme",
   "keywords": [
     "pi-package",
     "pi",
@@ -12,6 +20,11 @@
     "openai-compat",
     "anthropic-compat"
   ],
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "tsc -p tsconfig.json",
+    "check": "npm run typecheck && npm test"
+  },
   "pi": {
     "extensions": [
       "./index.ts"
@@ -25,8 +38,7 @@
       "optional": true
     }
   },
-  "scripts": {
-    "test": "node --test",
-    "typecheck": "tsc -p tsconfig.json"
+  "publishConfig": {
+    "access": "public"
   }
 }
