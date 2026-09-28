@@ -31,11 +31,15 @@
 
 ## Установка
 
-1. Добавьте пакет в `packages` в `~/.pi/agent/settings.json`:
-   `"../../pi-plugins/pi-modelverse"`
-2. Запустите `pi`, выполните `/login modelverse` (или `export MODELVERSE_API_KEY=…`)
+```bash
+pi install git:github.com/RarogCmex/pi-modelverse@main
+# или локально
+pi install /path/to/pi-modelverse
+```
+
+1. Запустите `pi`, выполните `/login modelverse` (или `export MODELVERSE_API_KEY=…`)
    и выберите модель.
-3. Проверка: `node live/check.ts` (читает `secret.env`).
+2. Проверка: `node live/check.ts` (читает `secret.env`).
 
 Переменные окружения:
 
