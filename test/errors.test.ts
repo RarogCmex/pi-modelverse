@@ -34,10 +34,10 @@ test("normalizeOverflowError: non-overflow errors pass through untouched", () =>
 
 test("clarifyGrantError: the live gate form becomes actionable", () => {
   const clarified = clarifyGrantError(
-    "[trace_id: f7b060b8-cb39-4aa2-bc08-58b1620aefb5] No permission to use the model: apikey [uminferapikey-1t6eh6bqkggl] not support model [claude-opus-5-5]",
+    "[trace_id: 00000000-0000-4000-8000-000000000000] No permission to use the model: apikey [uminferapikey-EXAMPLE0002] not support model [claude-opus-5-5]",
   );
   assert.ok(clarified);
-  assert.ok(clarified.includes("uminferapikey-1t6eh6bqkggl"));
+  assert.ok(clarified.includes("uminferapikey-EXAMPLE0002"));
   assert.ok(clarified.includes("claude-opus-5-5"));
   assert.ok(clarified.includes("зависят от ключа"));
   assert.equal(clarifyGrantError("400 Invalid param"), undefined);
@@ -45,14 +45,14 @@ test("clarifyGrantError: the live gate form becomes actionable", () => {
 
 test("clarifyPermissionError: quota, IP whitelist and auth failures name their cause", () => {
   const quota = clarifyPermissionError(
-    'Access forbidden: api key quota exceeded, key_id=uminferapikey-1j3gwjgyhkwc, daily_limit_amount=100 , monthly_limit_amount=1000',
+    'Access forbidden: api key quota exceeded, key_id=uminferapikey-EXAMPLE0003, daily_limit_amount=100 , monthly_limit_amount=1000',
   );
-  assert.ok(quota?.includes("uminferapikey-1j3gwjgyhkwc"));
+  assert.ok(quota?.includes("uminferapikey-EXAMPLE0003"));
   assert.ok(quota?.includes("100"));
   assert.ok(quota?.includes("лимит расходов"));
 
   const ip = clarifyPermissionError(
-    'Access forbidden: api key ip not in whitelist, key_id=uminferapikey-1j3gwjgyhkwc, ip=127.0.0.1',
+    'Access forbidden: api key ip not in whitelist, key_id=uminferapikey-EXAMPLE0003, ip=127.0.0.1',
   );
   assert.ok(ip?.includes("127.0.0.1"));
   assert.ok(ip?.includes("белого списка"));

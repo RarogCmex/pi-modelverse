@@ -68,7 +68,7 @@ deepseek-v4.1-flash): `high` → блок `reasoning`, `none` → чистое �
 Проба с абсурдной капой (`max_completion_tokens: 99000000`) на KEY1:
 
 ```
-Access forbidden: api key quota exceeded, key_id=uminferapikey-1qo9o56wp6ua,
+Access forbidden: api key quota exceeded, key_id=uminferapikey-EXAMPLE0001,
 daily_limit_amount=100 , monthly_limit_amount=0
 ```
 
@@ -89,5 +89,5 @@ Access forbidden: api key ip not in whitelist, key_id=…, ip=127.0.0.1
 - `usage` расширен: `billing_usage`, `input_tokens`, `output_tokens`,
   `claude_cache_creation_5_m_tokens`, `claude_cache_creation_1_h_tokens`.
 - Grant-ошибка (живая форма): `No permission to use the model: apikey
-  [uminferapikey-1t6eh6bqkggl] not support model [claude-opus-5-5]`.
+  [uminferapikey-EXAMPLE0002] not support model [claude-opus-5-5]`.
 - `auto` (Auto Router) на ключе без кандидатов: `no available model for auto`.
