@@ -282,7 +282,7 @@ pi install /path/to/pi-modelverse
 
 ```bash
 node scripts/link-pi.mjs   # один раз: линкует типы pi из глобальной установки
-npm run check              # typecheck + 70 офлайн-тестов (сеть мокается)
+npm run check              # typecheck + офлайн-тесты (сеть мокается)
 node live/check.ts         # живые пробы; требует локальный secret.env, тратит квоту
 ```
 

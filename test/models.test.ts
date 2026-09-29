@@ -161,6 +161,38 @@ test("unknown with listing price converts it", () => {
   assert.ok(Math.abs(model.cost.input - 7 / 6.7252) < 1e-6);
 });
 
+test("overlay entry never gets an output cap larger than its window", () => {
+  // The square's own data disagrees for the deepseek-v4 family: legacy
+  // MaxModelLen 131 072 against MaxOutputTokens 384 x 1024 = 393 216. pi puts
+  // maxTokens on the wire, so passing both through unclamped would make every
+  // request from such an id invalid. The curated table clamps by hand; the
+  // overlay has to clamp in one place because its entries are invented at runtime.
+  const model = unknownIdToModel("deepseek-v4.2-flash", undefined, BASE, 6.7252, {
+    contextWindow: 131_072,
+    maxTokens: 393_216,
+  });
+  assert.equal(model.contextWindow, 131_072);
+  assert.equal(model.maxTokens, 131_072, "cap must be clamped to the window");
+});
+
+test("overlay clamp leaves a sane cap untouched", () => {
+  const model = unknownIdToModel("some-brand-new-id", undefined, BASE, 6.7252, {
+    contextWindow: 262_144,
+    maxTokens: 65_536,
+  });
+  assert.equal(model.maxTokens, 65_536, "cap below the window must not be raised");
+});
+
+test("overlay clamp applies when only the window comes from the square", () => {
+  // Family guess for an unknown deepseek-v4* is 1M/393216; a square window of
+  // 131072 must pull the guessed cap down with it.
+  const model = unknownIdToModel("deepseek-v4.2-pro", undefined, BASE, 6.7252, {
+    contextWindow: 131_072,
+  });
+  assert.equal(model.contextWindow, 131_072);
+  assert.equal(model.maxTokens, 131_072);
+});
+
 test("buildModels converts every catalog entry", () => {
   const models = buildModels(BASE);
   assert.equal(models.length, CATALOG.length);

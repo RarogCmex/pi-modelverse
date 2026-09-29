@@ -312,7 +312,7 @@ const OUT_131K = 131_072;
 const OUT_64K = 65_536;
 const OUT_32K = 32_768;
 
-/** Semi-dynamic registration for a gateway id this build has never seen:
+/** Semi-dynamic registration for a gateway id this catalog has never seen:
  *  family-guessed route/thinking/windows plus real CNY prices whenever the
  *  listing embeds a usable single-band price (see discovery.ts). */
 export function unknownIdToModel(
@@ -324,13 +324,23 @@ export function unknownIdToModel(
 ): ModelverseModel {
   const api = guessApi(id);
   const guessed = guessWindows(id);
+  // The model square's advertised window beats a family guess when present.
+  const contextWindow = spec?.contextWindow ?? guessed.contextWindow;
+  // Window and cap come from *independent* sources here (a square spec for one, a
+  // family guess for the other), so they can disagree — and the square's own data
+  // does disagree for the deepseek-v4 family: legacy MaxModelLen 131 072 against
+  // MaxOutputTokens 384 × 1024 = 393 216. pi puts `maxTokens` on the wire, so an
+  // uncapped value larger than the window means every request from that id is
+  // rejected. The curated table clamps this by hand per entry (see the
+  // `deepseek-v4.1-flash` comment in catalog.ts); the overlay has to do it once,
+  // here, because its entries are invented at runtime.
+  const maxTokens = Math.min(spec?.maxTokens ?? guessed.maxTokens, contextWindow);
   const entry: CatalogEntry = {
     id,
     name: modelName(id),
     api,
-    // The model square's advertised window beats a family guess when present.
-    contextWindow: spec?.contextWindow ?? guessed.contextWindow,
-    maxTokens: spec?.maxTokens ?? guessed.maxTokens,
+    contextWindow,
+    maxTokens,
     input: guessInput(id),
     thinking: guessThinking(id, api),
     cny: pricing ?? { input: 0, output: 0, cacheRead: 0 },
