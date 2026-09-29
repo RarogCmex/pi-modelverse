@@ -19,7 +19,6 @@
  * first picker render after a pi restart — before any refresh has run. The
  * file lives beside pi's own state (`getAgentDir()`), written atomically
  * (tmp + rename, mode 0600) because several pi instances may share it.
- * Same pattern as the sibling pi-alibaba-models catalog cache.
  */
 
 import { createHash } from "node:crypto";

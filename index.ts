@@ -15,8 +15,9 @@
  *
  * Routing is per-model and single-surface, cross-checked against the official
  * protocol matrix (github.com/UCloudDoc-Team/modelverse,
- * api_doc/text_api/model-competi.md) and the live tool-call matrix — see the
- * README "Verified facts" section for both.
+ * api_doc/text_api/model-competi.md — English locale only, the Chinese path
+ * 404s) and the live tool-call matrix — see
+ * research/live-probes-2026-09-24.md §1 for both.
  */
 
 // NOTE on this import: pi's extension loader aliases the bare
@@ -25,7 +26,8 @@
 // `openAIResponsesApi`, `anthropicMessagesApi`). Subpaths other than /compat,
 // /oauth and /providers/all are NOT aliased. tsconfig.json mirrors the alias
 // so `npm run typecheck` sees what pi sees. This is the only pi-runtime-only
-// module boundary in the package (same contract as pi-siliconflow).
+// module boundary in the package: everything else must import cleanly under
+// plain Node so the tests can run it.
 import { anthropicMessagesApi, openAICompletionsApi, openAIResponsesApi } from "@earendil-works/pi-ai";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";

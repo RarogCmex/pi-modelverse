@@ -7,13 +7,13 @@
  * reflects what THIS key can actually use — `fetchModels` re-runs per refresh,
  * pi persists the result through its ModelsStore.
  *
- * The overlay is additive and unknowns-only (same reasoning as pi-siliconflow):
- * known catalog ids keep their curated prices/caps; a live listing must not
+ * The overlay is additive and unknowns-only: known catalog ids keep their
+ * curated prices/caps; a live listing must not
  * freeze stale CNY rates into the ModelsStore, and a failed listing must not
  * unregister models.
  *
- * Unlike SiliconFlow, the Modelverse listing embeds full CNY pricing per id,
- * so an unknown id WITH a usable single-band price enters the overlay with
+ * The Modelverse listing embeds full CNY pricing per id, so an unknown id
+ * WITH a usable single-band price enters the overlay with
  * real prices instead of zero cost (tiered/promo pricing is skipped — see
  * `extractCnyPrice`).
  */
@@ -39,7 +39,8 @@ export interface GatewayModelListing {
 
 /**
  * Non-chat modalities on this gateway, verified against the 277-id listing
- * (audit 2026-09-24: 277 ids → 144 chat-usable): embeddings/rerank, audio/
+ * (audit 2026-09-24; the surviving chat-usable count is the README's, 140 =
+ * 139 models + the `auto` router): embeddings/rerank, audio/
  * realtime/transcribe, TTS, music (suno/midjourney), image/video generation
  * (wan, kling, vidu, happyhorse, pixverse, seedream/seedance, flux,
  * grok-imagine, gpt-image, qwen-image), web-search tools (exa/doubao),

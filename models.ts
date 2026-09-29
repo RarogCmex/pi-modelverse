@@ -5,8 +5,9 @@
  *
  *  1. Currency. Modelverse publishes CNY per 1M tokens; pi's `ModelCost` is
  *     USD per 1M. Converted at a documented rate, overridable via
- *     `MODELVERSE_CNY_PER_USD` (same default as the sibling pi-siliconflow so
- *     cost reports stay cross-gateway comparable).
+ *     `MODELVERSE_CNY_PER_USD`. The default rate is deliberately the same in
+ *     every CNY-priced gateway plugin we ship, so cost reports stay
+ *     cross-gateway comparable.
  *
  *  2. Request shape. `api.modelverse.cn` matches none of pi's URL
  *     auto-detection rules, so compat flags are set deliberately per surface.
@@ -35,8 +36,9 @@ export const PROVIDER_ID = "modelverse";
 export const DEFAULT_BASE_URL = "https://api.modelverse.cn/v1";
 
 /**
- * CNY per 1 USD. Same default + provenance as pi-siliconflow (mid-market
- * 2026-09-15) so the two plugins report comparable costs. Overridable.
+ * CNY per 1 USD: the mid-market rate observed 2026-09-15. Deliberately the
+ * same default in every CNY-priced gateway plugin we ship, so cost reports
+ * stay comparable across them. Overridable via MODELVERSE_CNY_PER_USD.
  */
 export const DEFAULT_CNY_PER_USD = 6.7252;
 
@@ -58,7 +60,7 @@ function toCost(cny: CnyPrice, tiers: readonly CnyTier[] | undefined, rate: numb
     output: cnyToUsd(cny.output, rate),
     cacheRead: cnyToUsd(cny.cacheRead, rate),
     // Modelverse prices prompt-cache writes for the gpt/claude families;
-    // families without a published write price report 0 (matching pi-siliconflow).
+    // families without a published write price report 0 rather than guessing.
     cacheWrite: cnyToUsd(cny.cacheWrite ?? 0, rate),
   };
   if (tiers?.length) {
@@ -237,8 +239,9 @@ export function modelName(id: string): string {
 
 /**
  * Request surface for an id the catalog has never seen. Family-routed per the
- * live matrix (README "Verified facts"): claude → anthropic; OpenAI-generation
- * (gpt-6, o-series, codex, gpt-5.x) → responses /completions as probed; gemini
+ * live matrix (research/live-probes-2026-09-24.md §1): claude → anthropic;
+ * OpenAI-generation (gpt-6, o-series, codex, gpt-5.x) → responses /completions
+ * as probed; gemini
  * and glm → completions (their /responses is broken on this gateway);
  * reasoners (mimo, deepseek-v4, qwen3.7+, kimi) → responses.
  */
@@ -283,6 +286,13 @@ export function guessWindows(id: string): { contextWindow: number; maxTokens: nu
   // 1M context / 128K output; the square's refreshed MaxModelLenNew agrees
   // (1000 × 1024). Live-probed ≥683,309 on mimo-v2.6-flash (2026-09-25).
   if (/^mimo/.test(name)) return { contextWindow: CTX_1000K, maxTokens: OUT_131K };
+  // Family guess for ids the curated table does not know. Deliberately NOT the
+  // same numbers as the curated `deepseek-v4.1-flash` entry (131 072 / 131 072):
+  // that entry keeps the square's legacy window because nothing verifies the 1M,
+  // while an unknown id gets the vendor's advertised pair (square MaxModelLenNew
+  // ×1024 = 1M, MaxOutputTokens 384 ×1024 = 393 216). When the square is
+  // reachable its per-id spec wins over this guess anyway (see
+  // `unknownIdToModel`).
   if (/^deepseek-v4/.test(name)) return { contextWindow: CTX_1M, maxTokens: OUT_393K };
   if (/^glm-5/.test(name)) return { contextWindow: CTX_1M, maxTokens: OUT_131K };
   if (/^(kimi-k3|qwen3\.[78])/.test(name)) return { contextWindow: CTX_262K, maxTokens: CTX_262K };

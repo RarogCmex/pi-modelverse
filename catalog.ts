@@ -13,7 +13,7 @@
  *   request routing     matrix-probed live per model × surface
  *                        (chat round-trips incl. tool result, /responses with
  *                        function_call, anthropic /v1/messages with tool_use).
- *                        See README "Verified facts".
+ *                        See research/live-probes-2026-09-24.md §1.
  *
  * Fields the gateway does NOT publish: `contextWindow`, `maxTokens`, `input`.
  * Until Modelverse documents them, entries carry estimates — marked with
@@ -93,9 +93,6 @@ export const MODELVERSE_EFFORT = {
 /** Sizes reused across entries. */
 const CTX_1M = 1_048_576;
 const CTX_262K = 262_144;
-const CTX_256K = 262_144;
-const OUT_393K = 393_216;
-const OUT_131K = 131_072;
 const OUT_64K = 65_536;
 const OUT_32K = 32_768;
 const CTX_400K = 409_600;
@@ -216,7 +213,14 @@ export const CATALOG: readonly CatalogEntry[] = [
     id: "deepseek-v4.1-flash",
     name: "DeepSeek V4.1 Flash",
     api: "openai-responses",
-    contextWindow: 131_072, // square MaxModelLen (the 1M figure belongs to the -flash sibling)
+    // Square legacy MaxModelLen = 131 072. That is the platform's frozen
+    // default, not a measurement: the square's refreshed MaxModelLenNew hints
+    // at 1M for this id, and so does `guessWindows` below for unknown
+    // deepseek-v4* ids. Neither is backed by upstream docs or a live probe, so
+    // the curated entry keeps the lower number — see
+    // research/mimo-v26-1m-window-2026-09-25.md §2 for why only mimo-v2.6 was
+    // promoted to 1M.
+    contextWindow: 131_072,
     // Square advertises 384 × 1024 = 393216 output, but that exceeds the window
     // the same endpoint reports — contradictory vendor data, so capped to the
     // window (pi would otherwise send an invalid max_tokens).
@@ -295,7 +299,12 @@ export const CATALOG: readonly CatalogEntry[] = [
     id: "auto",
     name: "Auto Router",
     api: "openai-completions",
-    contextWindow: CTX_262K, // est: smallest candidate window (deepseek-v4 is 1M)
+    // est: the router publishes no window of its own. 262 144 is a middle-of-
+    // the-range guess; the documented candidates disagree (the square's legacy
+    // MaxModelLen says 131 072 for glm-5.2 and deepseek-v4-flash, its refreshed
+    // MaxModelLenNew hints at 1M for others) and none is probed through the
+    // routed path.
+    contextWindow: CTX_262K,
     maxTokens: OUT_32K, // est
     input: ["text"],
     thinking: { kind: "none" },

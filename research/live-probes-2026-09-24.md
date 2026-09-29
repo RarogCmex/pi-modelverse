@@ -76,7 +76,9 @@ daily_limit_amount=100 , monthly_limit_amount=0
 `permission_error` на **любой** запрос — включая заведомо отклоняемые (overflow).
 К моменту захвата KEY1 был в состоянии `monthly_limit_amount=0`; KEY2 работал.
 
-Прочие permission-формы (официальная таблица `api_doc/common/api-key.md`):
+Прочие permission-формы (официальная таблица в `console/api-key.md`, раздел
+«Api Key 精细化权限控制»; страницы `api_doc/common/api-key` не существует —
+в `api_doc/common/` лежат только `api-common`, `certificate`, `error-code`):
 
 ```
 Access forbidden: api key ip not in whitelist, key_id=…, ip=127.0.0.1
@@ -85,7 +87,8 @@ Access forbidden: api key ip not in whitelist, key_id=…, ip=127.0.0.1
 
 ## 6. Прочее
 
-- `finish_reason: normal` — встречается наряду с `stop`/`length` (доки `struct.md`).
+- `finish_reason: normal` — встречается наряду с `stop`/`length` (доки:
+  `https://astraflow.ucloud.cn/docs/modelverse/api_doc/text_api/struct.md`).
 - `usage` расширен: `billing_usage`, `input_tokens`, `output_tokens`,
   `claude_cache_creation_5_m_tokens`, `claude_cache_creation_1_h_tokens`.
 - Grant-ошибка (живая форма): `No permission to use the model: apikey

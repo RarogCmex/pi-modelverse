@@ -12,8 +12,8 @@
  * surfaces Anthropic-native "prompt is too long: X tokens > Y maximum"
  * (probed live 2026-09-24), which pi-ai matches out of the box.
  *
- * Same contract as pi-siliconflow's errors.ts: add the
- * `context_length_exceeded:` marker so pi's compaction classifier fires.
+ * Contract: add the `context_length_exceeded:` marker so pi's compaction
+ * classifier fires.
  * Rate limits must never be rewritten into a compaction trigger.
  */
 
@@ -63,7 +63,7 @@ export function clarifyGrantError(message: string): string | undefined {
 
 /**
  * Key-level permission failures beyond the model-grant case (official
- * "API Key 精细化权限控制" doc, api_doc/common/api-key.md, 2026-03-20):
+ * "API Key 精细化权限控制" doc, console/api-key.md, feature added 2026-03-20):
  *
  *   Access forbidden: api key quota exceeded, key_id=…, daily_limit_amount=100,
  *     monthly_limit_amount=1000
@@ -74,7 +74,7 @@ export function clarifyGrantError(message: string): string | undefined {
  * ("Validate Certification failed").
  */
 const KEY_QUOTA_RE = /api key quota exceeded[^\n]*?key_id=([\w-]+)[^\n]*?daily_limit_amount=([\d.]+)[^\n]*?monthly_limit_amount=([\d.]+)/;
-const KEY_IP_RE = /api key ip not in whitelist[^\n]*?key_id=([\w-]+)[^\n]*?ip=([\w:.]+)/;;
+const KEY_IP_RE = /api key ip not in whitelist[^\n]*?key_id=([\w-]+)[^\n]*?ip=([\w:.]+)/;
 const AUTH_FAILED_RE = /Validate (?:Certification|Authentication) failed|invalid_token/i;
 
 /** Actionable text for key-level permission/auth failures, or undefined. */
@@ -84,7 +84,7 @@ export function clarifyPermissionError(message: string): string | undefined {
     const [, keyId, daily, monthly] = quota;
     return (
       `modelverse: ключ [${keyId}] исчерпал лимит расходов (дневной ${daily}, месячный ${monthly}). ` +
-      `Лимит задаётся в консоли Modelverse при создании/правке API Key (额控制, Api Key 精细化权限控制). ` +
+      `Лимит задаётся в консоли Modelverse при создании/правке API Key (额度控制, Api Key 精细化权限控制). ` +
       `Увеличьте лимит или смените ключ; учтите, что расходы пересчитываются раз в час.`
     );
   }

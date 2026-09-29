@@ -1,9 +1,9 @@
 /**
  * Model-square specs — the gateway's own advertised limits.
  *
- * Found 2026-09-24 via `agent-browser` on the Modelverse model square
- * (astraflow.ucloud.cn/modelverse/playground): the page fetches a public
- * UCloud API that needs **no authentication**
+ * Found 2026-09-24 by watching the network requests of the Modelverse model
+ * square page (astraflow.ucloud.cn/modelverse/playground) in a browser: the
+ * page fetches a public UCloud API that needs **no authentication**
  *
  *   GET https://api.ucloud.cn/?Action=ListUFSquareModelGuest&Limit=…&Offset=…
  *
@@ -25,7 +25,8 @@
  *                      (matches the live mimo bisection exactly), 384 → 393216
  *   MaxInputTokens     extra input-side cap where the gateway sets one, else 0
  *   ApiProtocols       {ChatCompletions, Responses, Gemini, Anthropic} — the
- *                      gateway's own protocol matrix (matches the docs' model-competi)
+ *                      gateway's own protocol matrix (matches the docs page
+ *                      api_doc/text_api/model-competi — English locale only)
  *
  * Coverage caveat: the guest square lists ~125 **open** models. The proxied
  * frontier models (claude-*, gpt-*, gemini-*) are deliberately absent, so they

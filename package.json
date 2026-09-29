@@ -4,6 +4,9 @@
   "description": "Modelverse (api.modelverse.cn) provider for pi — three-protocol routing (anthropic / responses / chat), key-grant-aware live discovery, CNY catalog with tiered pricing.",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "node": ">=22.18.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/RarogCmex/pi-modelverse.git"

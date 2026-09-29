@@ -4,7 +4,8 @@
  * Split out from `index.ts` so it can be imported and tested under plain Node:
  * everything here resolves through pi-ai's core entrypoint. The symbols that
  * live only in the compat entrypoint (the protocol adapters) are injected by
- * `index.ts` instead of imported here — same contract as pi-siliconflow.
+ * `index.ts` instead of imported here, so this file stays importable — and
+ * testable — under plain Node.
  */
 
 import {
