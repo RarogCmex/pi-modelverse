@@ -1,6 +1,6 @@
 {
   "name": "@rarogcmex/pi-modelverse",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Modelverse (api.modelverse.cn) provider for pi — three-protocol routing (anthropic / responses / chat), key-grant-aware live discovery, CNY catalog with tiered pricing.",
   "type": "module",
   "license": "MIT",
