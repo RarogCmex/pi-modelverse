@@ -294,7 +294,8 @@ node live/check.ts         # живые пробы; требует локаль�
 установку pi (префикс npm, nvm, pnpm, `~/.local`, `/usr/local`) и создаёт
 симлинки, на Windows — junctions; для конкретного пути:
 `PI_ROOT=/path/to/node_modules node scripts/link-pi.mjs`. Проверено на
-pi 0.87.1 / pi-ai 0.87.1 / `@types/node` 22.19.19.
+pi 0.87.1 / pi-ai 0.87.1 / `@types/node` 22.19.19; тот же setup и `npm run check`
+повторены на pi 0.99.1 / pi-ai 0.99.1 (2026-09-30) — 73/73 зелёные.
 
 `secret.env` (в `.gitignore`, в репозитории отсутствует): `API=…`, `KEY1=…`,
 `KEY2=…` — широкий ключ и грантовый промо-ключ. Без него `live/check.ts`
