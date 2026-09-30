@@ -297,6 +297,12 @@ node live/check.ts         # живые пробы; требует локаль�
 pi 0.87.1 / pi-ai 0.87.1 / `@types/node` 22.19.19; тот же setup и `npm run check`
 повторены на pi 0.99.1 / pi-ai 0.99.1 (2026-09-30) — 73/73 зелёные.
 
+`npm run typecheck` зовёт голый `tsc`, а `devDependencies` здесь намеренно пусты
+(`scripts/link-pi.mjs` линкует только пакеты пи), поэтому TypeScript нужен в
+`PATH`: `npm i -g typescript@5.9.3` — это версия, которую пиннит CI
+(`.github/workflows/check.yml`); на 7.0.2 typecheck тоже чистый (измерено
+2026-09-30).
+
 `secret.env` (в `.gitignore`, в репозитории отсутствует): `API=…`, `KEY1=…`,
 `KEY2=…` — широкий ключ и грантовый промо-ключ. Без него `live/check.ts`
 не запускается; офлайн-тесты от него не зависят.
