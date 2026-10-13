@@ -146,6 +146,24 @@ export function buildOverlay(
     .map((id) => unknownIdToModel(id, extractCnyPrice(byId.get(id)), baseUrl, rate, specs?.get(id)));
 }
 
+/**
+ * The gateway this refresh should talk to.
+ *
+ * pi 1.2.0 put the registered provider's effective base URL into
+ * `RefreshModelsContext.baseUrl`, overrides included — a `models.json`
+ * `providers.modelverse.baseUrl` mirror is composed onto the provider pi-ai
+ * refreshes, so the context knows it while the URL captured at registration
+ * does not. Requests and the curated catalog already follow that override (pi
+ * rewrites each model's `baseUrl` when it composes), so discovery has to as
+ * well: without this a mirror setup lists models from the public gateway and
+ * stamps every overlay entry with a URL the key was not issued for. Older hosts
+ * leave `baseUrl` undefined and get the registration-time value.
+ */
+export function resolveRefreshBaseUrl(context: RefreshModelsContext, fallback: string): string {
+  const configured = context.baseUrl?.trim().replace(/\/+$/, "");
+  return configured ? configured : fallback;
+}
+
 /** Resolve the bearer token pi's auth layer did not hand us (env-only setups). */
 function resolveKey(context: RefreshModelsContext): string | undefined {
   const stored = context.credential;
@@ -169,6 +187,7 @@ export async function fetchModelverseModels(
   if (!context.allowNetwork || context.signal.aborted) return [];
   const key = resolveKey(context);
   if (!key) return [];
+  const gateway = resolveRefreshBaseUrl(context, baseUrl);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -176,7 +195,7 @@ export async function fetchModelverseModels(
   context.signal.addEventListener("abort", onAbort, { once: true });
 
   try {
-    const url = `${baseUrl.replace(/\/+$/, "")}/models`;
+    const url = `${gateway.replace(/\/+$/, "")}/models`;
     const response = await fetch(url, {
       headers: { Authorization: `Bearer ${key}` },
       signal: controller.signal,
@@ -201,7 +220,7 @@ export async function fetchModelverseModels(
     // needed): real windows/output caps instead of family guesses. Failure is
     // silent — the overlay then falls back to guesses, i.e. prior behaviour.
     const specs = await fetchSquareCatalog(8_000, context.signal);
-    return buildOverlay(entries, baseUrl, cnyPerUsd(), undefined, specs);
+    return buildOverlay(entries, gateway, cnyPerUsd(), undefined, specs);
   } catch {
     return [];
   } finally {

@@ -11,12 +11,13 @@ import {
   extractCnyPrice,
   fetchModelverseModels,
   parseModelIds,
+  resolveRefreshBaseUrl,
   SKIP_MODEL_IDS,
   type GatewayModelListing,
 } from "../discovery.ts";
 import { createMemoryGrantStore } from "../grants.ts";
 import { CATALOG_BY_ID } from "../catalog.ts";
-import { guessApi } from "../models.ts";
+import { guessApi, type ModelverseModel } from "../models.ts";
 
 /**
  * The captured listing shape (two real keys, 2026-09-24): trimmed to the
@@ -247,12 +248,78 @@ test("fetchModelverseModels records nothing when the listing fails or is offline
   assert.equal(store.lookup("k2"), undefined);
 });
 
-function refreshContext(key: string | undefined): never {
+test("fetchModelverseModels follows context.baseUrl (pi 1.2.0 models.json mirror)", async () => {
+  // pi composes a `models.json` `providers.modelverse.baseUrl` override onto the
+  // provider it refreshes and hands the result back as `context.baseUrl`.
+  // Discovery must use it: requests and the curated catalog already do.
+  const seen: string[] = [];
+  const restore = stubFetch((url) => {
+    seen.push(url);
+    if (url.endsWith("/models"))
+      return new Response(JSON.stringify({ data: [...FIXTURE_KEY2.data, { id: "mimo-v3.0-pro" }] }), {
+        status: 200,
+      });
+    return new Response("nope", { status: 404 }); // model square: unavailable, silently ignored
+  });
+  let overlay: ModelverseModel[] = [];
+  try {
+    overlay = await fetchModelverseModels(
+      "https://api.modelverse.cn/v1",
+      refreshContext("k2", "https://mirror.example/api/v1/"),
+      8_000,
+    );
+  } finally {
+    restore();
+  }
+  assert.ok(
+    seen.includes("https://mirror.example/api/v1/models"),
+    `mirror listing not requested: ${seen.join(", ")}`,
+  );
+  assert.ok(
+    !seen.some((url) => url.includes("api.modelverse.cn")),
+    `public gateway contacted despite the override: ${seen.join(", ")}`,
+  );
+  // Overlay entries carry the override too, so an unknown id is callable on the
+  // mirror instead of pointing back at the gateway the key may not reach.
+  assert.deepEqual(overlay.map((model) => model.id), ["mimo-v3.0-pro"]);
+  assert.equal(overlay[0].baseUrl, "https://mirror.example/api/v1");
+});
+
+test("fetchModelverseModels keeps the registration baseUrl when the context has none", async () => {
+  // Hosts older than pi 1.2.0 leave `context.baseUrl` undefined; a blank or
+  // whitespace-only value must not win over the registration-time URL either.
+  for (const baseUrl of [undefined, "  "]) {
+    const seen: string[] = [];
+    const restore = stubFetch((url) => {
+      seen.push(url);
+      return url.endsWith("/models")
+        ? new Response(JSON.stringify(FIXTURE_KEY2), { status: 200 })
+        : new Response("nope", { status: 404 });
+    });
+    try {
+      await fetchModelverseModels("https://api.modelverse.cn/v1", refreshContext("k2", baseUrl), 8_000);
+    } finally {
+      restore();
+    }
+    assert.ok(
+      seen.includes("https://api.modelverse.cn/v1/models"),
+      `default gateway not requested for baseUrl=${JSON.stringify(baseUrl)}: ${seen.join(", ")}`,
+    );
+  }
+  assert.equal(resolveRefreshBaseUrl(refreshContext("k2"), "https://a.example/v1/"), "https://a.example/v1/");
+  assert.equal(
+    resolveRefreshBaseUrl(refreshContext("k2", "https://b.example/v1//"), "https://a.example/v1"),
+    "https://b.example/v1",
+  );
+});
+
+function refreshContext(key: string | undefined, baseUrl?: string): never {
   return {
     credential: key ? { type: "api_key", key } : undefined,
     allowNetwork: true,
     signal: new AbortController().signal,
     publish: async () => true,
+    baseUrl,
   } as never;
 }
 
