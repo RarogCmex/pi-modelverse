@@ -5,12 +5,13 @@
  *   KEY1=...   # broad grants (277 ids as of 2026-09-24)
  *   KEY2=...   # granted promo key (7 ids)
  *
- * Run:  node live/check.ts
+ * Run:  node live/check.ts              # listings + picker/catalog views
+ *       node live/check.ts --no-smoke   # same, without the paid chat round-trips
  */
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { probeGrants } from "../provider.ts";
+import { buildModelverseProvider, probeGrants } from "../provider.ts";
 import { CATALOG } from "../catalog.ts";
 import { createMemoryGrantStore, filterModelsByGrants } from "../grants.ts";
 import { fetchModelverseModels } from "../discovery.ts";
@@ -93,6 +94,41 @@ async function main() {
     if (hidden.length) console.log(`  hidden: ${hidden.join(", ")}`);
   }
 
+  // Catalog view: what pi resolves *by id* — `--model provider/id`, the
+  // settings default, session restore — and what its availability snapshot
+  // falls back to when the shared pass is degraded. Both read `getModels()`,
+  // so grants must be enforced there, not only in `filterModels`.
+  for (const name of ["KEY1", "KEY2"]) {
+    const key = env[name];
+    if (!key) continue;
+    const store = createMemoryGrantStore();
+    const provider = buildModelverseProvider(structuralApis(), api, store);
+    const cold = provider.getModels().length;
+    await provider.refreshModels!({
+      credential: { type: "api_key", key },
+      allowNetwork: true,
+      signal: new AbortController().signal,
+      // Apply the publication synchronously, like pi's ModelsStore does, so the
+      // overlay lands in the catalog this check reads.
+      publish: async (publication: { update?: () => void }) => {
+        publication.update?.();
+        return true;
+      },
+    } as never);
+    const ids = provider.getModels().map((model) => model.id);
+    console.log(
+      `\ncatalog view (${name}): cold=${cold} after refresh=${ids.length} ` +
+        `granted=${store.lookup(key)?.ids.length ?? "unknown"}`,
+    );
+    console.log(`  gpt-6-luna resolvable by id: ${ids.includes("gpt-6-luna")}`);
+    console.log(`  claude-opus-5-5 resolvable by id: ${ids.includes("claude-opus-5-5")}`);
+  }
+
+  if (process.argv.includes("--no-smoke")) {
+    console.log("\nchat smoke skipped (--no-smoke)");
+    return;
+  }
+
   // Cheap live smoke on the chat surface. Quota-aware: a key whose spend budget
   // is exhausted answers permission_error for everything (even rejected
   // requests — the cap is estimated at admission), so report and move on
@@ -115,6 +151,15 @@ async function main() {
       }
     }
   }
+}
+
+/** Structural only: no stream is ever invoked by the listing checks. */
+function structuralApis(): never {
+  return {
+    "openai-completions": {},
+    "openai-responses": {},
+    "anthropic-messages": {},
+  } as never;
 }
 
 main().catch((error) => {

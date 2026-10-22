@@ -7,8 +7,9 @@
  * `/chat/completions` for the rest), a curated CNY catalog with tiered
  * pricing, key-grant-aware live discovery (the /v1/models view differs per
  * credential: 277 ids for a broad key, 7 for a promo key), per-key model
- * filtering in the picker (a key never shows models the gateway does not
- * grant it — see grants.ts), `/login` with grant validation, `X-Session-ID`
+ * filtering — the catalog itself and pi's `filterModels` hook both drop ids the
+ * key is not granted, so neither the picker nor `--model`/session restore can
+ * reach them (see grants.ts and provider.ts), `/login` with grant validation, `X-Session-ID`
  * scheduling affinity on every surface (per the official prompt-cache guide),
  * and readable rewrites for the gateway's "No permission" and
  * `tokens_too_long` rejections.

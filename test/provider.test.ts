@@ -244,6 +244,84 @@ test("buildModelverseProvider: env-only setups filter by MODELVERSE_API_KEY", ()
   }
 });
 
+test("buildModelverseProvider: the catalog itself drops ungranted ids once pi reports the key", async () => {
+  const grants = createMemoryGrantStore();
+  grants.record("k2", ["mimo-v2.6-flash", "gemini-3.8-flash", "jev-1.13.0"]);
+  const provider = buildModelverseProvider(dummyApis(), "https://api.modelverse.cn/v1", grants);
+
+  // Before pi says which key is in effect, nothing is hidden.
+  assert.ok(provider.getModels().some((model) => model.id === "gpt-6-luna"));
+
+  // pi's offline refresh phase (registration → `refresh({ allowNetwork: false })`)
+  // is the earliest hook carrying the credential; `createProvider` returns from
+  // that phase without calling fetchModels, so the catalog must learn the key here.
+  await provider.refreshModels!({
+    credential: { type: "api_key", key: "k2" },
+    allowNetwork: false,
+    signal: new AbortController().signal,
+    publish: async () => true,
+  } as never);
+
+  // `getModel(provider, id)` in pi is `getModels(provider).find(...)` — the path
+  // `--model`, the settings default and session restore resolve through.
+  assert.deepEqual(
+    provider.getModels().map((model) => model.id),
+    ["mimo-v2.6-flash", "gemini-3.8-flash"],
+  );
+  assert.equal(provider.getModels().find((model) => model.id === "gpt-6-luna"), undefined);
+  assert.deepEqual(
+    provider.getAllModels!().map((model) => model.id),
+    ["mimo-v2.6-flash", "gemini-3.8-flash"],
+  );
+});
+
+test("buildModelverseProvider: filterModels' credential scopes the catalog too", () => {
+  const grants = createMemoryGrantStore();
+  grants.record("k3", ["kimi-k3"]);
+  const provider = buildModelverseProvider(dummyApis(), "https://api.modelverse.cn/v1", grants);
+  provider.filterModels!(provider.getModels(), { type: "api_key", key: "k3" });
+  assert.deepEqual(provider.getModels().map((model) => model.id), ["kimi-k3"]);
+});
+
+test("buildModelverseProvider: a key with no recorded grants keeps the whole catalog", async () => {
+  const provider = buildModelverseProvider(dummyApis(), "https://api.modelverse.cn/v1", createMemoryGrantStore());
+  await provider.refreshModels!({
+    credential: { type: "api_key", key: "never-observed" },
+    allowNetwork: false,
+    signal: new AbortController().signal,
+    publish: async () => true,
+  } as never);
+  assert.ok(provider.getModels().some((model) => model.id === "gpt-6-luna"));
+  assert.ok(provider.getModels().some((model) => model.id === "claude-opus-5-5"));
+});
+
+test("buildModelverseProvider: /login re-scopes the catalog to the new key immediately", async () => {
+  const grants = createMemoryGrantStore();
+  grants.record("old-key", ["kimi-k3", "glm-5.3"]);
+  // The auth object binds its fetch when the provider is built, so the stub has
+  // to be in place before that.
+  const previous = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({ data: [{ id: "mimo-v2.6-pro" }] }), { status: 200 })) as typeof fetch;
+  try {
+    const provider = buildModelverseProvider(dummyApis(), "https://api.modelverse.cn/v1", grants);
+    await provider.refreshModels!({
+      credential: { type: "api_key", key: "old-key" },
+      allowNetwork: false,
+      signal: new AbortController().signal,
+      publish: async () => true,
+    } as never);
+    assert.deepEqual(provider.getModels().map((model) => model.id), ["kimi-k3", "glm-5.3"]);
+
+    // pi only re-runs filterModels on its next availability pass; the catalog
+    // follows the entered key in the same tick.
+    await provider.auth.apiKey!.login!(fakeInteraction([]));
+    assert.deepEqual(provider.getModels().map((model) => model.id), ["mimo-v2.6-pro"]);
+  } finally {
+    globalThis.fetch = previous;
+  }
+});
+
 function dummyApis(): never {
   // Only structural: createProvider dispatches per model.api, and no stream is
   // ever invoked in these tests.

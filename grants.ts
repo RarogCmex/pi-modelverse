@@ -1,12 +1,15 @@
 /**
- * Per-key grant cache — the data layer behind `filterModels`.
+ * Per-key grant cache — the data layer behind credential-scoped models.
  *
  * The gateway answers `GET /v1/models` with a per-credential view (277+ ids
  * for a broad key, 7 for a promo key), but pi's model picker consults
  * `filterModels` synchronously — there is no room for a network call there.
  * So the grant set observed by the async paths (the discovery refresh, the
  * `/login` probe) is recorded here, keyed by a SHA-256 fingerprint of the API
- * key (the raw key never touches disk), and the filter replays it:
+ * key (the raw key never touches disk), and replayed against the catalog in
+ * two places: `filterModels` (pi's documented availability hook) and the
+ * provider's own `getModels()`/`getAllModels()` — see `buildModelverseProvider`
+ * for why the hook alone is not enough:
  *
  *   - record seen  → picker shows only models this key actually grants;
  *   - no record    → optimistic pass-through. A key we have never observed
@@ -148,6 +151,7 @@ export function createFileGrantStore(filePath: string): GrantStore {
 /**
  * The membership filter itself. Deliberately generic over `{ id: string }`
  * so it composes with pi's `Model` lists without importing the model type.
+ * Called from `filterModels` and from the grant-scoped catalog.
  *
  * Pass-through cases (never hide models on missing information):
  *   - no effective key (unconfigured provider — pi hides it anyway);

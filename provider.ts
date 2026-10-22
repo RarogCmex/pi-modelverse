@@ -124,11 +124,16 @@ export function resolveEffectiveKey(
  * this gateway, not a fixed catalog. The probe's full id set is recorded into
  * the grant store, so the model picker filters by the new key immediately —
  * without waiting for the next discovery refresh.
+ *
+ * `onKey` reports the key that is about to be stored, so the catalog can scope
+ * itself to the new key in the same tick (pi only re-runs `filterModels` on its
+ * next availability pass).
  */
 export function modelverseApiKeyAuth(
   baseUrl: string,
   fetchImpl: typeof fetch = fetch,
   grants?: GrantStore,
+  onKey?: (key: string) => void,
 ): ApiKeyAuth {
   const base = envApiKeyAuth(API_KEY_AUTH_NAME, [API_KEY_ENV_VAR]);
   return {
@@ -155,6 +160,7 @@ export function modelverseApiKeyAuth(
           type: "info",
           message: `Could not validate the key against the gateway (${(error as Error).message}). Saving it anyway.`,
         });
+        onKey?.(key);
         return { type: "api_key", key };
       }
       if (!probe.ok) {
@@ -166,6 +172,7 @@ export function modelverseApiKeyAuth(
       // Record even a 0-grant listing: an empty set is the truth about this
       // key, and the filter below will (correctly) hide the whole catalog.
       grants?.record(key, probe.ids);
+      onKey?.(key);
       hint =
         probe.granted > 0
           ? `Key accepted: ${probe.granted} models granted (e.g. ${probe.sample.join(", ")}). The model picker and discovery overlay follow this key.`
@@ -183,26 +190,91 @@ export function modelverseApiKeyAuth(
   };
 }
 
+/**
+ * Grants are enforced in the catalog itself, not only in `filterModels`.
+ *
+ * pi consults `filterModels` on exactly one path: a *successful*
+ * `Models.getAvailable()` availability pass. Everything else reads the
+ * provider's synchronous catalog (`getModels()` / `getModel(provider, id)`):
+ *
+ *   - `--model modelverse/<id>` (`resolveCliModel` deliberately searches all
+ *     models, not the available ones, so `--api-key` first-time setup works);
+ *   - the settings `defaultProvider`/`defaultModel`;
+ *   - session restore (`pi -c` / `--resume`), which resolves the saved
+ *     `provider/id` through `getModel`;
+ *   - pi's own `snapshot.available` whenever the shared availability pass is
+ *     degraded: `markProvisionallyConfigured` at registration and
+ *     `updateModelSnapshot()` inside every catalog refresh fill it from the
+ *     unfiltered catalog, and the pass that would re-filter it runs
+ *     `Promise.all` over *all* providers — one rejection (any other plugin's
+ *     auth check, a credential-store read) leaves the unfiltered list in place
+ *     while the model picker and `/model <text>` are reading it.
+ *
+ * Probed 2026-10-20 on pi 1.3.0 with a live promo key: `getModel("modelverse",
+ * "gpt-6-luna")` returns the model, `pi --model modelverse/gpt-6-luna` streams
+ * it into the gateway's `No permission` rejection, and forcing the availability
+ * pass to fail grows the picker's modelverse list from 6 granted ids back to
+ * the full 14 — see
+ * research/grant-filter-bypass-paths-2026-10-20.md.
+ *
+ * So the catalog is scoped by the same grant set the filter replays. pi's
+ * documented contract says `getModels()` is the complete catalog; we narrow it
+ * because on this gateway an ungranted id is not a usable model at all — the
+ * gateway rejects it per key. The optimistic rule is unchanged and shared with
+ * `filterModelsByGrants`: no key, or a key never observed, hides nothing.
+ */
 export function buildModelverseProvider(
   api: ModelverseApis,
   baseUrl: string = resolveBaseUrl(),
   grants: GrantStore = createMemoryGrantStore(),
 ): Provider<GatewayApi> {
-  return createProvider<GatewayApi>({
+  // The key pi last told us about, from its own hooks: the refresh context
+  // (earliest — pi refreshes right after registration), the `filterModels`
+  // credential, and `/login`. Undefined until then, which reads as "unknown
+  // key" and passes the whole catalog through.
+  let effectiveKey: string | undefined;
+  const noteCredential = (credential: Credential | undefined): void => {
+    effectiveKey = resolveEffectiveKey(credential);
+  };
+  const scoped = <T extends { id: string }>(models: readonly T[]): readonly T[] =>
+    filterModelsByGrants(models, effectiveKey, grants);
+
+  const provider = createProvider<GatewayApi>({
     id: PROVIDER_ID,
     name: "Modelverse",
     baseUrl,
-    auth: { apiKey: modelverseApiKeyAuth(baseUrl, undefined, grants) },
+    auth: {
+      apiKey: modelverseApiKeyAuth(baseUrl, undefined, grants, (key) => {
+        effectiveKey = key;
+      }),
+    },
     models: buildModels(baseUrl, cnyPerUsd(processEnv)),
     fetchModels: (context) => fetchModelverseModels(baseUrl, context, undefined, grants),
     // Credential-scoped availability: `Models.getAvailable()` (the picker,
     // /model resolution, list-models) applies this after the auth check.
     // Synchronous by contract — the grant store is fed by the async paths
     // (discovery refresh, login probe) and replayed here.
-    filterModels: (models, credential) =>
-      filterModelsByGrants(models, resolveEffectiveKey(credential), grants),
+    filterModels: (models, credential) => {
+      noteCredential(credential);
+      return scoped(models);
+    },
     api,
   });
+
+  return {
+    ...provider,
+    // pi's own refresh is the earliest hook that carries the credential: it
+    // runs the offline phase (`allowNetwork: false`) immediately after
+    // registration, before any picker render. `createProvider` returns from
+    // that phase before calling `fetchModels`, so the credential has to be
+    // read here rather than in the discovery call.
+    refreshModels: async (context) => {
+      noteCredential(context.credential);
+      await provider.refreshModels?.(context);
+    },
+    getModels: () => scoped(provider.getModels()),
+    getAllModels: () => scoped(provider.getAllModels?.() ?? provider.getModels()),
+  };
 }
 
 /** Marker so wrapped fetches are not wrapped again (idempotence). */
