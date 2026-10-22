@@ -214,6 +214,8 @@ id в каталоге, предупреждает и всё равно подс
 - [`research/mimo-v26-1m-window-2026-09-25.md`](research/mimo-v26-1m-window-2026-09-25.md) —
   окно 1M у mimo-v2.6: upstream-доки Xiaomi, `MaxModelLenNew` в model square,
   живая проба на 683K входных токенов;
+- [`research/mimo-v26-ttft-cache-2026-10-17.md`](research/mimo-v26-ttft-cache-2026-10-17.md) —
+  prompt cache у mimo-v2.6 попадает (99,7% на ~18K), но хит не снижает TTFT;
 - [`research/pi-1.2.0-and-anonymous-listing-2026-10-13.md`](research/pi-1.2.0-and-anonymous-listing-2026-10-13.md) —
   проверка на pi 1.2.0 (`RefreshModelsContext.baseUrl`, зеркало на 127.0.0.1) и
   пробы анонимного листинга шлюза.
@@ -296,12 +298,21 @@ id в каталоге, предупреждает и всё равно подс
 ### Зашитые в плагин факты из доков
 
 - **Prompt caching.** `X-Session-ID` — header для сродства сессии к инференс-
-  инстансу (↑ hit-rate KV-кэша, ↓ TTFT). Отправляется на всех поверхностях:
+  инстансу (↑ hit-rate KV-кэша; ↓ TTFT доки обещают, на mimo это не
+  подтвердилось — см. примечание ниже). Отправляется на всех поверхностях:
   anthropic — нативно (`sendSessionAffinityHeaders` + `sessionAffinityFormat:
   "openrouter"` → pi шлёт `x-session-id`), openai — инъекцией fetch
   (`withSessionAffinity`, `provider.ts`). `cache_control` — **только на
   content-блоках** (top-level платформа не признаёт; pi ставит маркеры на блоки
   сам). TTL 5m + опция 1h — это `cache_write_5m/1h_tokens` из прайсинга.
+  > **Примечание, mimo-v2.6 (2026-10-17).** Кэш на шлюзе работает: повтор
+  > того же префикса даёт `cached_tokens` 3968/4030 и 17728/17787, хиты кратны
+  > 64 токенам, pi кладёт их в `cacheRead`. Но TTFT от хита почти не зависит:
+  > 99,7% хит на ~18K — 3,8–10,3 с, холодный запрос на 237 токена — 1,6 с.
+  > `X-Session-ID` уходит (цепочка pi → `withSessionAffinity` цела), но тот же
+  > префикс попадает в кэш и без него. Секунды TTFT — латентность инференса,
+  > не промах кэша; то же видно у upstream Xiaomi. Сырые числа —
+  > [`research/mimo-v26-ttft-cache-2026-10-17.md`](research/mimo-v26-ttft-cache-2026-10-17.md).
 - **Auto Router.** `"model": "auto"` — документированный роутер: выбирает модель из
   пула (kimi-k2.6, kimi-k2.7-code, glm-5.2, deepseek-v4-flash/-pro, MiniMax-M3,
   qwen3.7-plus/-max), фактическую возвращает в `model` ответа; есть `allowed_models`
